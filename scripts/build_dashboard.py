@@ -994,8 +994,8 @@ function _sigRank(v){return v==="pass"?3:v==="amber"?2:v==="fail"?1:0}
 function sortData(data,col,dir){
   return data.slice().sort(function(a,b){
     var av=gnv(a,col),bv=gnv(b,col);
-    if(av===null||av===undefined)av=dir==="asc"?Infinity:-Infinity;
-    if(bv===null||bv===undefined)bv=dir==="asc"?Infinity:-Infinity;
+    var an=av===null||av===undefined,bn=bv===null||bv===undefined;
+    if(an&&bn)return 0;if(an)return 1;if(bn)return-1;
     // Sort pass/amber/fail signals numerically
     if(av==="pass"||av==="amber"||av==="fail"||bv==="pass"||bv==="amber"||bv==="fail"){av=_sigRank(av);bv=_sigRank(bv);return dir==="asc"?av-bv:bv-av}
     // Sort stage badges: Capital > Late > Early > None
@@ -1687,11 +1687,11 @@ function renderMM99(){
     hdr+=ratingsColHeaders().length>0?'<th colspan="8" class="col-ratings">Ratings</th>':"";
     hdr+='</tr><tr class="col-header-row">';
     hdr+=commonCols()+th("Score","mm99_score","col-num col-filter","Minervini 11-test score (8 technical + 3 RS)")
-      +th("P>200D","t1","col-filter grp-lt-first","Price above 200-day MA")+th("200D Up","t2","col-filter grp-lt-last","200-day MA trending upward MoM")
-      +th("P>150D","t3","col-filter grp-mt-first","Price above 150-day MA")+th("150>200","t4","col-filter grp-mt-last","150-day MA above 200-day MA")
-      +th("50>150","t5","col-filter grp-st-first","50-day MA above 150-day MA")+th("P>50D","t6","col-filter grp-st-last","Price above 50-day MA")
-      +th("P>20%L","t7","col-filter grp-lead-first","Price at least 20% above 52-week low")+th("P<25%H","t8","col-filter grp-lead-last","Price within 25% of 52-week high")
-      +th("Sector","t9","col-filter grp-rs-first","Relative strength vs sector")+th("Industry","t10","col-filter","Relative strength vs industry")+th("Market","t11","col-filter grp-rs-last","Relative strength vs market")
+      +th("P>200D","t1_pct","col-filter grp-lt-first","Price above 200-day MA")+th("200D Up","ma200_months","col-filter grp-lt-last","200-day MA months rising (of 12)")
+      +th("P>150D","t3_pct","col-filter grp-mt-first","Price above 150-day MA")+th("150>200","t4_pct","col-filter grp-mt-last","150-day MA above 200-day MA")
+      +th("50>150","t5_pct","col-filter grp-st-first","50-day MA above 150-day MA")+th("P>50D","t6_pct","col-filter grp-st-last","Price above 50-day MA")
+      +th("P>20%L","t7_pct","col-filter grp-lead-first","Price at least 20% above 52-week low")+th("P<25%H","t8_pct","col-filter grp-lead-last","Price within 25% of 52-week high")
+      +th("Sector","t9_pct","col-filter grp-rs-first","Relative strength vs sector")+th("Industry","t10_pct","col-filter","Relative strength vs industry")+th("Market","t11_pct","col-filter grp-rs-last","Relative strength vs market")
       +th("Probing","pb_stage","col-txt col-ref","Probing Bet filter stage")+th("Basing","bp_stage","col-txt col-ref","Basing Plateau filter stage")
       +ratingsColHeaders();
     hdr+='</tr>';
@@ -1799,9 +1799,9 @@ function renderBP(){
     hdr+='</tr><tr class="col-header-row">';
     // FIX: MA Range 3x wider, test columns narrower
     hdr+=commonCols()+th("MA Range","ma_map_price","col-filter","Visual: relative positions of Price, 200D, 150D, 50D MAs","width:240px")
-      +th("P~200","t1","col-filter grp-loose-first","Price within 15% of 200D MA","width:50px")+th("50~200","t2","col-filter grp-loose-last","50D within 15% of 200D MA","width:50px")
-      +th("P~200","t3","col-filter grp-med-first","Price within 10% of 200D MA","width:50px")+th("50~200","t4","col-filter","50D within 10% of 200D MA","width:50px")+th("150~200","t5","col-filter grp-med-last","150D within 10% of 200D MA","width:55px")
-      +th("P~200","t6","col-filter grp-tight-first","Price within 5% of 200D MA","width:50px")+th("50~200","t7","col-filter","50D within 5% of 200D MA","width:50px")+th("150~200","t8","col-filter grp-tight-last","150D within 5% of 200D MA","width:55px")
+      +th("P~200","t1_pct","col-filter grp-loose-first","Price within 15% of 200D MA","width:50px")+th("50~200","t2_pct","col-filter grp-loose-last","50D within 15% of 200D MA","width:50px")
+      +th("P~200","t3_pct","col-filter grp-med-first","Price within 10% of 200D MA","width:50px")+th("50~200","t4_pct","col-filter","50D within 10% of 200D MA","width:50px")+th("150~200","t5_pct","col-filter grp-med-last","150D within 10% of 200D MA","width:55px")
+      +th("P~200","t6_pct","col-filter grp-tight-first","Price within 5% of 200D MA","width:50px")+th("50~200","t7_pct","col-filter","50D within 5% of 200D MA","width:50px")+th("150~200","t8_pct","col-filter grp-tight-last","150D within 5% of 200D MA","width:55px")
       +th("MM 99","mm_stage","col-txt col-ref","MM99 filter stage")+th("Probing Bet","pb_stage2","col-txt col-ref","Probing Bet filter stage")+ratingsColHeaders();
     hdr+='</tr>';return hdr;
   }

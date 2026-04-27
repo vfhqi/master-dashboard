@@ -1,1 +1,1 @@
-var CHART_REGISTRY=CHART_REGISTRY||{};CHART_REGISTRY["BIO3-DE"]=[["2025-06-06",29.8,30.6,28.4,28.4,2403,null,null,null,null,null,null,null],["2025-07-03",NaN,NaN,NaN,NaN,0,null,null,null,null,null,null,null]];
+var CHART_REGISTRY=CHART_REGISTRY||{};CHART_REGISTRY["BIO3-DE"]=[];
