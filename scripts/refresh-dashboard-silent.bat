@@ -7,6 +7,9 @@ REM ============================================================
 setlocal
 cd /d "%~dp0"
 
+REM ── Force UTF-8 so Python unicode prints don't crash under Task Scheduler ──
+set PYTHONIOENCODING=utf-8
+
 REM ── Locate git via GitHub Desktop (not on PATH) ──
 set "GIT_CMD="
 for /f "delims=" %%D in ('dir /b /ad /o-n "%LOCALAPPDATA%\GitHubDesktop\app-*" 2^>nul') do (

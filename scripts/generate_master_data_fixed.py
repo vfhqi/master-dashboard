@@ -941,7 +941,6 @@ def compute_all_filters(prices):
         utr["ews_count"] = sum(1 for v in utr["ews"].values() if v)
 
         # UTR qualification
-        # UTR qualification
         if composite >= 6.0 and utr["ews_count"] >= 4:
             utr["stage"] = "Capital"
         elif composite >= 4.5:
