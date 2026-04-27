@@ -325,7 +325,7 @@ table.data-table td.col-identity{white-space:nowrap}
 
 /* Key: floating tooltips near column headers */
 .key-panel{display:none}
-table.data-table th .key-tip{display:none;position:absolute;top:100%;left:0;z-index:20;background:#fbfaf5;border:1px solid #e8e3d4;border-radius:4px;padding:4px 8px;font-size:10px;font-weight:400;color:#6b6b6b;white-space:normal;min-width:140px;max-width:220px;box-shadow:0 2px 8px rgba(0,0,0,.08);text-transform:none;letter-spacing:0;line-height:1.3;pointer-events:none}
+table.data-table th .key-tip{display:none;position:absolute;top:100%;left:0;z-index:20;background:#fbfaf5;border:1px solid #e8e3d4;border-radius:4px;padding:6px 10px;font-size:10px;font-weight:400;color:#6b6b6b;white-space:normal;min-width:160px;max-width:300px;box-shadow:0 2px 8px rgba(0,0,0,.08);text-transform:none;letter-spacing:0;line-height:1.35;pointer-events:none}
 table.data-table.show-keys th .key-tip{display:block}
 table.data-table.show-keys th{overflow:visible}
 table.data-table th{position:relative}
@@ -1963,6 +1963,7 @@ function renderUTR(){
       r.cap_count=0;r.late_quality=0;
       r.t_depth_v=null;r.t_ma_v=null;r.st_roll_v=null;r.it_intact_v=null;
       r.vol_q_v=null;r.updn_v=null;r.contr_v=null;r.dist_d_v=null;r.candle_v=null;r.rs_h_v=null;
+      r.sort_vol=null;r.sort_updn=null;r.sort_contr=null;r.sort_dist=null;r.sort_candle=null;r.sort_rs=null;r.sort_st=null;r.sort_it=null;
       r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";
       r.utr_capital=false;r.utr_late=false;r.utr_early=false;
       rows.push(r);continue;
@@ -1992,6 +1993,15 @@ function renderUTR(){
     r.dist_d_v=mx.dist_days!=null?mx.dist_days:null;
     r.candle_v=mx.candle_quality!=null?(mx.candle_quality*100).toFixed(0)+"%":null;
     r.rs_h_v=mx.rs_percentile!=null?mx.rs_percentile:null;
+    // Raw numeric sort keys for UTR test columns
+    r.sort_vol=mx.vol_trend!=null?mx.vol_trend:null;
+    r.sort_updn=mx.updown_ratio!=null?mx.updown_ratio:null;
+    r.sort_contr=mx.contraction!=null?mx.contraction:null;
+    r.sort_dist=mx.dist_days!=null?mx.dist_days:null;
+    r.sort_candle=mx.candle_quality!=null?mx.candle_quality:null;
+    r.sort_rs=mx.rs_percentile!=null?mx.rs_percentile:null;
+    r.sort_st=(md["5d_declining"]?1:0)+(md["10d_declining"]?1:0);
+    r.sort_it=(md["50d_rising"]?1:0)+(md["150d_rising"]?1:0);
     r.contr=stg==="Capital"?t.c7_contraction:t.l5_contraction;
     r.rs_h=t.c8_rs;
     r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";
@@ -2025,13 +2035,13 @@ function renderUTR(){
   h+='<td></td>';  // Ticker
   h+='<td class="col-input"></td>';  // Sector
   h+='<td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td>';  // Price..RS
-  h+='<td>Which MA</td><td>Retest #</td>';  // Test MA, Retest
-  h+='<td>Depth from high</td><td>Dist to MA</td>';  // Depth%, MA Dist%
-  h+='<td class="utr-e-first">Depth OK?</td><td>Near MA?</td><td>ST declining?</td><td class="utr-e-last">IT rising?</td>';  // Early
-  h+='<td class="utr-l-first">Vol fading?</td><td>Up vs down</td><td>Range tight?</td><td class="utr-l-last">Dist days</td>';  // Late
-  h+='<td class="utr-c-first">Candle qual</td><td class="utr-c-last">RS holding?</td>';  // Capital
-  h+='<td>Score</td>';  // C#
-  h+='<td></td>';  // Stage
+  h+='<td>Which MA is being tested (50D/100D/150D/200D)</td><td>Completed retest cycles of this MA since uptrend began</td>';  // Test MA, Retest
+  h+='<td>% below swing high (how deep is the pullback)</td><td>% distance to the test MA (how close to support)</td>';  // Depth%, MA Dist%
+  h+='<td class="utr-e-first">Is pullback depth within healthy range for this stage?</td><td>Is price approaching or at the support MA?</td><td>Are short-term MAs (5D, 10D) rolling over, confirming pullback?</td><td class="utr-e-last">Are intermediate MAs (50D, 150D) still rising, confirming trend intact?</td>';  // Early
+  h+='<td class="utr-l-first">Has selling volume dried up vs average? Lower = more constructive</td><td>Up-day volume vs down-day volume ratio. Above 1.0 = net accumulation</td><td>Is price range contracting? Volatility contraction precedes next move</td><td class="utr-l-last">High-volume down days in last 25 sessions. Institutional selling signal</td>';  // Late
+  h+='<td class="utr-c-first">% of recent closes in upper portion of daily range. Buyers stepping in</td><td class="utr-c-last">Relative strength percentile. Must hold above 70 for Capital</td>';  // Capital
+  h+='<td>Count of Capital-grade quality signals passing</td>';  // C#
+  h+='<td>Pullback lifecycle stage</td>';  // Stage
   h+='<td></td><td></td>';  // X-ref
   h+=ratingsColHeaders().length>0?'<td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td>':"";
   h+='</tr>';
@@ -2050,23 +2060,23 @@ function renderUTR(){
   h+='</tr><tr class="col-header-row">';
   // ── Row 3: Individual column headers ──
   h+=utrCommonCols()
-    +th("Test MA","test_ma","col-txt col-filter")
-    +th("Ret#","retest_num","col-num col-filter")
-    +th("Depth%","depth_pct","col-num")
-    +th("MA Dist","test_ma_dist","col-num")
-    +th("Depth","t_depth","col-filter utr-e-first")
-    +th("MA","t_ma","col-filter")
-    +th("ST","st_roll","col-filter")
-    +th("IT","it_intact","col-filter utr-e-last")
-    +th("Vol","vol_q","col-filter utr-l-first")
-    +th("U/D","updn","col-filter")
-    +th("Ctr","contr","col-filter")
-    +th("Dis","dist_d","col-filter utr-l-last")
-    +th("Cdl","candle","col-filter utr-c-first")
-    +th("RS","rs_h","col-filter utr-c-last")
-    +th("C#","cap_count","col-num")
-    +th("Stage","utr_stage","col-txt col-filter")
-    +th("MM99","mm_stage","col-txt col-ref")+th("PB","pb_stage2","col-txt col-ref")
+    +th("Test MA","test_ma","col-txt col-filter","Which moving average the stock is pulling back towards. Scans 50D, 100D, 150D, 200D in order and picks the first one price is approaching from above. 50D retest in a strong uptrend is the bread-and-butter Minervini entry. 200D retest is last line of defence.")
+    +th("Retest #","retest_num","col-num col-filter","How many completed retest cycles of this MA since the uptrend began. A completed retest = price came within 2% of the MA then moved 5%+ above it. 1st retest is highest conviction (Minervini). 2nd is acceptable. 3rd+ is a warning \u2014 the setup is getting stale.")
+    +th("Depth %","depth_pct","col-num","Percentage below the swing high. Measures how deep the pullback has gone. Early: 3\u201310% (just started). Late: 8\u201320% (Minervini guideline for buyable pullbacks). Capital: must stay under 25%. Deeper than 25% = invalidated, trend probably broken.")
+    +th("MA Dist %","test_ma_dist","col-num","Distance from the test MA as a percentage. Positive = still above the MA. Late stage: within 5% and approaching. Capital stage: within 2% (at the MA or slight undercut). Negative = price has broken below \u2014 if beyond -5%, pattern is invalidated.")
+    +th("Depth","depth_pct","col-filter utr-e-first","Is the pullback depth within healthy range for the current stage? Early: 3\u201310% from high. Late: 8\u201320%. Capital: under 25%. Pass means the pullback is sized correctly \u2014 not so shallow it is noise, not so deep the trend is breaking.")
+    +th("MA Prox","test_ma_dist","col-filter","Is price approaching or sitting at the support MA? Late: within 5% and closing in. Capital: within 2% (touching or slight undercut). Minervini\u2019s undercut-and-rally is acceptable; a decisive break below is not.")
+    +th("ST Roll","sort_st","col-filter","Are the short-term MAs (5-day and 10-day) rolling over? This confirms the pullback is real and short-term in nature. Both declining = clear pullback signal. If short-term MAs are still rising, the stock hasn\u2019t actually started pulling back yet.")
+    +th("IT Intact","sort_it","col-filter utr-e-last","Are the intermediate MAs (50-day and 150-day) still rising? This is the Minervini Stage 2 requirement: the long-term trend must remain intact even as price pulls back. Both rising = pass. If 150D is declining, the broader uptrend may be over.")
+    +th("Vol Dry","sort_vol","col-filter utr-l-first","Has selling volume dried up? Measured as 10-day average volume divided by 50-day average. Lower = sellers exhausted (constructive). Late: below 0.85. Capital: below 0.80. Minervini: best setups show volume dropping 40\u201360% below average during the pullback.")
+    +th("Up/Dn","sort_updn","col-filter","Ratio of average up-day volume to average down-day volume. Above 1.0 = more volume on up days than down days (quiet accumulation). Capital: needs above 1.1. Below 0.8 = distribution, institutions selling \u2014 the pullback is not constructive.")
+    +th("Contract","sort_contr","col-filter","Volatility contraction: ATR(10) divided by ATR(20). Below 1.0 means the daily range is narrowing \u2014 the stock is coiling. Late: below 0.90. Capital: below 0.85. One of the strongest pre-breakout signals (Minervini + Weinstein). Tight coil = energy stored for next leg.")
+    +th("Dist Days","sort_dist","col-filter utr-l-last","Distribution days in the last 25 sessions. A distribution day = close below prior close on volume 25%+ above the 50-day average. Institutional selling footprint. Early: 0\u20131 expected. Late: 0\u20133 acceptable. Capital: 0\u20132 required. 6+ = invalidation.")
+    +th("Candle","sort_candle","col-filter utr-c-first","Candle quality: percentage of the last 10 closes in the upper 40% of the daily range. Measures whether buyers are stepping in at the MA. Capital gate: needs 50%+. High candle quality at a support MA = accumulation pattern, buyers defending the level.")
+    +th("RS Hold","sort_rs","col-filter utr-c-last","Relative strength percentile vs the market. Must hold above 70 for Capital qualification \u2014 the market still rates this stock highly despite the pullback. Below 50 = invalidation. If RS collapses during a pullback, it signals stock-specific weakness, not healthy rest.")
+    +th("C#","cap_count","col-num","Count of Capital-grade quality signals currently passing (out of C1\u2013C8). All 8 must pass for Capital stage. Useful as a quick read on how close a Late-stage stock is to becoming actionable \u2014 higher count = closer to a buy signal.")
+    +th("Stage","utr_stage","col-txt col-filter","Pullback lifecycle stage. Early = pullback initiated, short-term MAs rolling, trend intact. Late = approaching the test MA, quality checks intensifying. Capital = healthy retest confirmed, all signals pass, act today. None = no active pullback or pattern invalidated.")
+    +th("MM99","mm_stage","col-txt col-ref","Cross-reference: Minervini 99 filter stage for this stock")+th("PB","pb_stage2","col-txt col-ref","Cross-reference: Probing Bet filter stage for this stock")
     +ratingsColHeaders();
   h+='</tr></thead><tbody>';
   for(var j=0;j<rows.length;j++){
