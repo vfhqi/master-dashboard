@@ -1,6 +1,6 @@
 # Master Dashboard — Project State
 
-**Last updated:** 2026-04-27 (Watson, Cowork session)
+**Last updated:** 2026-04-27 19:30 (Watson, Cowork session — chart fix + sticky headers)
 **Role:** Systems Architect
 **Mode:** Execution
 
@@ -27,7 +27,7 @@ Unified technical screening dashboard for ~976 European equities. Single HTML fi
 | 1 | MM99 | **Complete** | 8pt + 11pt extended, 5 groups, RS at 3 levels |
 | 2 | Basing Plateau | **Complete** | 3 tightness tiers, 8 tests, 3-month duration |
 | 3 | Probing Bet | **Complete** | 5 groups, 12 tests, dead cat detection |
-| 4 | Uptrend Retest | **V2 Coded** | V2 lifecycle stages coded + dashboard updated. Needs full universe run + threshold tuning. |
+| 4 | Uptrend Retest | **V2 Live** | V2 lifecycle stages live. Sort, key descriptions, stage filters, Jump To, chart loading all working. Sticky headers added. Threshold tuning pending. |
 | 5 | VCP | **Stub** | Stage 2 uptrend only. Full pattern detection = Phase 2 |
 | 6 | Technical Data | **Complete** | Raw data reference (7 SMAs, volume, 52W) |
 | 7 | SSEM | **Complete** | FactSet consensus data (manual export dependency) |
@@ -239,6 +239,11 @@ All computed in `build_prices_json` from daily OHLCV rows (same pattern as BP du
 | 27-Apr-26 | UTR V2: identify which MA is being tested (50D/100D/150D/200D) | Different MAs = different setup character and conviction |
 | 27-Apr-26 | UTR V2: count prior retests per MA since uptrend began | 1st retest highest conviction, 3rd+ is warning (Minervini) |
 | 27-Apr-26 | UTR V2: volume indicators span all stages with tightening thresholds | Volume quality is an early warning system, not just a Capital gate |
+| 27-Apr-26 | CHART_REGISTRY declared at global scope (before IIFE) | Lazy-loaded chart files eval in async callback scope — must be global for registration to work |
+| 27-Apr-26 | overflow-x:clip on .data-table-wrap (was hidden) | Enables position:sticky on table headers by not creating a scroll context |
+| 27-Apr-26 | Edit tool ban tightened to >~50KB (was >~800KB) | build_dashboard.py (156KB) was truncated by Edit tool — third occurrence |
+| 27-Apr-26 | UTR sort keys: numeric fields (sort_vol, sort_st, etc.) replacing signal strings | Signal strings (pass/amber/fail) all sort identically — numeric values enable meaningful sort |
+| 27-Apr-26 | UTR stage filter toggles replace score buttons (5/8, 6/8, 7/8, 8/8) | Score thresholds are meaningless in V2 lifecycle model — stage filters match the architecture |
 
 ## File Map
 
