@@ -335,6 +335,22 @@ table.data-table th{position:relative}
 /* FIX-2: Qualified Stocks heading */
 .qualified-title{font-size:14px;font-weight:600;color:var(--text-bright);margin:12px 0 8px;padding-left:4px}
 
+/* UTR V2: Stage group header row */
+.utr-group-row th{font-size:10px;font-weight:700;text-align:center;padding:3px 4px;letter-spacing:.5px;border-bottom:none;white-space:nowrap;cursor:default}
+.utr-group-blank{background:#f0ede3!important;border-bottom:none!important}
+.utr-group-hdr{color:#555;text-transform:uppercase}
+.utr-grp-info{background:#f5f3eb!important}
+.utr-grp-metric{background:#f5f3eb!important}
+.utr-grp-early{color:#7b6200!important}
+.utr-grp-late{color:#bf360c!important}
+.utr-grp-capital{color:#1b5e20!important}
+.utr-grp-ref{background:#f5f3eb!important}
+/* UTR V2: Two-line column headers */
+th.utr-col-early,th.utr-col-late,th.utr-col-capital{white-space:normal;line-height:1.25;min-width:54px;vertical-align:bottom}
+th.utr-col-early{background:#fffcf0!important}
+th.utr-col-late{background:#fff8f0!important}
+th.utr-col-capital{background:#f0faf0!important}
+
 @media(max-width:768px){.header-stats{display:none}.ind-sec-wrap{flex-direction:column}}
 /* FEAT-5: Industry/sector filter highlight */
 .ind-sec-highlight td.col-sector,.ind-sec-highlight td.col-industry{background:rgba(46,125,50,0.08)}
@@ -1290,6 +1306,10 @@ function commonCols(){
     +th("200D","_ma200","col-num col-price","200-day moving average","width:46px")
     +th("RS","rs_pct","col-num col-rs","Relative Strength percentile 0-100 (IBD composite)","width:32px");
 }
+function commonColCount(){return 10}
+function ratingsGroupHeader(){
+  return'<th colspan="8" class="utr-group-hdr utr-grp-ref">RATINGS</th>';
+}
 function commonTds(r){
   var tax=getTaxonomy(r.ticker);
   var dn=(displayMode==="company")?(r.company||r.ticker):r.ticker;
@@ -1853,23 +1873,38 @@ function renderUTR(){
   h+=buildPortfolioTile(currentTab);
   rows=applyIndSecFilter(rows);
   h+='<h3 class="qualified-title" id="section-stocks">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</h3>';
-  h+='<div class="data-table-wrap"><table class="data-table"><thead><tr>';
-  h+=commonCols()+th("Stage","utr_stage","col-txt col-filter","Pullback lifecycle: Early/Late/Capital/None")
-    +th("Test MA","test_ma","col-txt col-filter","Which MA is being tested (50D/100D/150D/200D)")
-    +th("Ret#","retest_num","col-num col-filter","Completed retest cycles of this MA. 1st = highest conviction (Minervini)")
-    +th("Depth%","depth_pct","col-num","% below swing high. E:3-10% L:8-20% C:<25%")
-    +th("MA Dist","test_ma_dist","col-num","% distance to test MA. L:<5% C:<2%")
-    +th("Depth","t_depth","col-filter","Depth test (stage-adjusted): E:3-10% L:8-20% C:<25%")
-    +th("At MA","t_ma","col-filter","Price at/approaching test MA. L:<5% C:<2%")
-    +th("ST Roll","st_roll","col-filter","5D/10D MAs declining (Early: pullback confirmed)")
-    +th("IT OK","it_intact","col-filter","50D+150D MAs still rising (trend intact)")
-    +th("Vol Q","vol_q","col-filter","10D/50D ADV. E:indicator L:<0.85 C:<0.80 = sellers drying up")
-    +th("Up/Dn","updn","col-filter","Up-day vol / down-day vol. L:>1.0 C:>1.1 = accumulation")
-    +th("Candle","candle","col-filter","% closes in upper 40% range (10d). C:>=50% = buyers at MA")
-    +th("Dist","dist_d","col-filter","Distribution days (25d). E:0-1 L:0-3 C:0-2")
-    +th("Contr","contr","col-filter","ATR10/ATR20. L:<0.9 C:<0.85 = volatility coiling")
-    +th("RS","rs_h","col-filter","RS percentile. C:>=70 required. <50 = invalidation")
-    +th("C#","cap_count","col-num","Capital tests passing (of 8). All 8 required for Capital")
+  h+='<div class="data-table-wrap"><table class="data-table"><thead>';
+  // ── Row 1: Stage group headers ──
+  h+='<tr class="utr-group-row">';
+  var ccCount=commonColCount();
+  h+='<th colspan="'+ccCount+'" class="utr-group-blank"></th>';
+  h+='<th colspan="3" class="utr-group-hdr utr-grp-info">SETUP INFO</th>';
+  h+='<th colspan="2" class="utr-group-hdr utr-grp-metric">METRICS</th>';
+  h+='<th colspan="4" class="utr-group-hdr utr-grp-early" style="background:#fff8e1;border-bottom:3px solid #f9a825;">EARLY (E)</th>';
+  h+='<th colspan="4" class="utr-group-hdr utr-grp-late" style="background:#fff3e0;border-bottom:3px solid #ef6c00;">+ LATE (L)</th>';
+  h+='<th colspan="2" class="utr-group-hdr utr-grp-capital" style="background:#e8f5e9;border-bottom:3px solid #2e7d32;">+ CAPITAL (C)</th>';
+  h+='<th class="utr-group-hdr utr-grp-info">SCORE</th>';
+  h+='<th colspan="2" class="utr-group-hdr utr-grp-ref">X-REF</th>';
+  h+=ratingsGroupHeader();
+  h+='</tr>';
+  // ── Row 2: Individual column headers (two-line labels) ──
+  h+='<tr>';
+  h+=commonCols()+th("Stage","utr_stage","col-txt col-filter","Pullback lifecycle: Early &rarr; Late &rarr; Capital. None = not in pullback or invalidated.")
+    +th("Test<br>MA","test_ma","col-txt col-filter","Which moving average is price approaching from above? Scans 50D&rarr;100D&rarr;150D&rarr;200D for first within range.")
+    +th("Retest<br>#","retest_num","col-num col-filter","How many times has price tested this MA and bounced? 1st retest = highest conviction (Minervini).")
+    +th("Depth<br>%","depth_pct","col-num","How far has price fallen from its swing high? Raw percentage. Thresholds vary by stage.")
+    +th("MA<br>Dist%","test_ma_dist","col-num","How far is price from the test MA? Positive = above MA. Negative = broken below.")
+    +th("Depth<br>Test","t_depth","col-filter utr-col-early","Is the pullback depth in range for this stage? E: 3&ndash;10% &bull; L: 8&ndash;20% &bull; C: &lt;25%")
+    +th("MA<br>Approach","t_ma","col-filter utr-col-early","Is price near the test MA? E: not tested &bull; L: within 5% &bull; C: within 2%")
+    +th("ST MAs<br>Rolling","st_roll","col-filter utr-col-early","Are the 5D and 10D MAs declining? Confirms the pullback is real, not just a flat pause.")
+    +th("IT MAs<br>Intact","it_intact","col-filter utr-col-early","Are the 50D and 150D MAs still rising? If not, the uptrend itself may be failing.")
+    +th("Volume<br>Drying","vol_q","col-filter utr-col-late","Is selling volume fading? 10D avg vol vs 50D avg vol. L: &lt;0.85 &bull; C: &lt;0.80. Lower = less selling pressure.")
+    +th("Up/Down<br>Vol","updn","col-filter utr-col-late","Are up-days seeing more volume than down-days? L: &gt;1.0 &bull; C: &gt;1.1. Shows accumulation on dips.")
+    +th("Volatility<br>Coiling","contr","col-filter utr-col-late","Is the range tightening? ATR(10) / ATR(20). L: &lt;0.9 &bull; C: &lt;0.85. Contraction precedes breakouts.")
+    +th("Dist<br>Days","dist_d","col-filter utr-col-late","High-volume down days in last 25 sessions. E: 0&ndash;1 &bull; L: 0&ndash;3 &bull; C: 0&ndash;2. Institutional selling signal.")
+    +th("Candle<br>Quality","candle","col-filter utr-col-capital","% of last 10 closes in upper 40% of daily range. C: &ge;50%. Shows buyers stepping in at the MA.")
+    +th("Relative<br>Strength","rs_h","col-filter utr-col-capital","RS percentile vs universe. C: &ge;70 required. Below 50 = invalidation. Leaders hold RS in pullbacks.")
+    +th("Capital<br>Score","cap_count","col-num","How many of the 8 Capital tests pass? All 8 required for Capital stage. Track Late stocks approaching 8/8.")
     +th("MM 99","mm_stage","col-txt col-ref")+th("PB","pb_stage2","col-txt col-ref")
     +ratingsColHeaders();
   h+='</tr></thead><tbody>';
