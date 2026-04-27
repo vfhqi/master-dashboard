@@ -92,6 +92,7 @@ def load_data():
     # Chart data is NO LONGER embedded — lazy-loaded from charts/<TICKER>.js files
     # (was 185MB+ embedded, now ~200KB per ticker loaded on demand)
     data_js += "var CHART_DATA = {};\n"  # kept for backward compat — empty object
+    data_js += "var CHART_REGISTRY = {};\n"  # global so lazy-loaded chart files can register into it
 
     return data_js
 
@@ -211,7 +212,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .group-toggle.active{background:#1b3d5c;color:#fff;border-color:#1b3d5c;font-weight:600}
 
 /* FIX-11: Fixed table layout, no horizontal scroll */
-.data-table-wrap{overflow-x:hidden;border-radius:8px;border:1px solid var(--border)}
+.data-table-wrap{overflow-x:clip;border-radius:8px;border:1px solid var(--border)}
 table.data-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:auto}
 table.data-table th{background:#f0ede3;color:#6b6b6b;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:4px 4px;text-align:left;border-bottom:2px solid var(--border);position:sticky;top:0;z-index:5;cursor:pointer;white-space:nowrap;user-select:none;-webkit-user-select:none;overflow:hidden;text-overflow:ellipsis}
 table.data-table th:hover{color:var(--text)}
@@ -347,7 +348,9 @@ th.utr-l-first,th.utr-l-last{border-top:2px solid rgba(230,100,0,0.30)}
 .utr-c-last{border-right:2px solid rgba(46,125,50,0.30)}
 th.utr-c-first,th.utr-c-last{border-top:2px solid rgba(46,125,50,0.30)}
 /* UTR key description row above headers */
-.utr-key-row td{font-size:9px;color:#8b8680;font-weight:400;font-style:italic;text-align:center;padding:1px 3px;white-space:normal;line-height:1.2;vertical-align:bottom;border-bottom:none;max-width:64px;overflow:hidden;text-overflow:ellipsis}
+.utr-key-row td{font-size:9px;color:#8b8680;font-weight:400;font-style:italic;text-align:center;padding:1px 3px;white-space:normal;line-height:1.2;vertical-align:bottom;border-bottom:none;max-width:64px;overflow:hidden;text-overflow:ellipsis;position:sticky;top:0;z-index:5;background:#f7f5ef}
+.utr-key-row+.group-header-row th{top:22px}
+.utr-key-row+.group-header-row+.col-header-row th{top:42px}
 /* UTR: hide inputs columns */
 .utr-inputs-hidden .col-input{display:none}
 /* UTR: Test MA colour coding */
@@ -581,7 +584,7 @@ window.toggleChartLayer=function(layer){
 // Chart data lives in charts/<TICKER>.js files (~200KB each).
 // Each file self-registers: var CHART_REGISTRY=CHART_REGISTRY||{};CHART_REGISTRY["TICKER"]=[...];
 // Data is compact array format: [date, o, h, l, c, v, ma5, ma10, ma20, ma50, ma100, ma150, ma200]
-var CHART_REGISTRY = CHART_REGISTRY || {};
+// CHART_REGISTRY is declared at global scope (before IIFE) so eval'd chart files can register into it
 var _chartLoading = {};
 
 function _safeTickerFile(t){
