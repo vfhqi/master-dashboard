@@ -227,8 +227,8 @@ table.data-table th.col-txt{text-align:left}
 
 /* FIX-4: Group header row above column headers */
 /* FIX-SORT: Group header row sticks at top:0; column header row sticks below it at top:20px */
-table.data-table .group-header-row th{background:#f5f3ec;font-size:9px;font-weight:600;padding:2px 4px;text-align:center;border-bottom:1px solid var(--border);cursor:default;letter-spacing:.4px;z-index:8;top:0}
-table.data-table .col-header-row th{top:20px;z-index:7}
+table.data-table .group-header-row th{background:#f5f3ec;font-size:9px;font-weight:600;padding:2px 4px;text-align:center;border-bottom:1px solid var(--border);cursor:default;letter-spacing:.4px;z-index:6;top:0;pointer-events:none}
+table.data-table .col-header-row th{top:20px;z-index:8}
 
 /* Column group borders */
 .grp-lt-first{border-left:2px solid rgba(200,50,50,0.25)}
@@ -346,6 +346,12 @@ th.utr-l-first,th.utr-l-last{border-top:2px solid rgba(230,100,0,0.30)}
 .utr-c-first{border-left:2px solid rgba(46,125,50,0.30)}
 .utr-c-last{border-right:2px solid rgba(46,125,50,0.30)}
 th.utr-c-first,th.utr-c-last{border-top:2px solid rgba(46,125,50,0.30)}
+/* UTR key description row above headers */
+.utr-key-row td{font-size:9px;color:#8b8680;font-weight:400;font-style:italic;text-align:center;padding:1px 3px;white-space:normal;line-height:1.2;vertical-align:bottom;border-bottom:none;max-width:64px;overflow:hidden;text-overflow:ellipsis}
+/* UTR: hide inputs columns */
+.utr-inputs-hidden .col-input{display:none}
+/* UTR: Test MA colour coding */
+.ma-50d{color:#ff8c00;font-weight:700}.ma-100d{color:#2ca02c;font-weight:700}.ma-150d{color:#1a5276;font-weight:700}.ma-200d{color:#4a3d9e;font-weight:700}
 
 @media(max-width:768px){.header-stats{display:none}.ind-sec-wrap{flex-direction:column}}
 /* FEAT-5: Industry/sector filter highlight */
@@ -363,6 +369,7 @@ var currentTab="mm99",currentSort={col:"mm99_score",dir:"desc"};
 var mm99MinScore=0;
 var utrMinCap=0;
 var utrFailedFilter="";  // ""=off, "L1W"=last 1 week, "L1M"=last 1 month
+var utrShowInputs=false;  // default hidden
 var displayMode="ticker";
 var valueMode="tick";
 var showRatings=false;
@@ -607,20 +614,39 @@ function loadChartData(ticker, callback){
     return;
   }
   _chartLoading[ticker]=[callback];
-  var s=document.createElement("script");
-  s.src="charts/"+_safeTickerFile(ticker)+".js";
-  s.onload=function(){
+  var url="charts/"+_safeTickerFile(ticker)+".js";
+  // Try XHR first (works from file:// and http://), fall back to script injection
+  var xhr=new XMLHttpRequest();
+  xhr.open("GET",url,true);
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4)return;
     var cbs=_chartLoading[ticker]||[];
     delete _chartLoading[ticker];
+    if(xhr.status===200||(xhr.status===0&&xhr.responseText)){
+      try{eval(xhr.responseText)}catch(e){}
+    }
     var data=CHART_REGISTRY[ticker]?_expandChartRows(CHART_REGISTRY[ticker]):null;
     for(var i=0;i<cbs.length;i++)cbs[i](data);
   };
-  s.onerror=function(){
-    var cbs=_chartLoading[ticker]||[];
+  try{xhr.send()}catch(e){
+    // XHR blocked — fall back to script injection (works from http://)
     delete _chartLoading[ticker];
-    for(var i=0;i<cbs.length;i++)cbs[i](null);
-  };
-  document.head.appendChild(s);
+    _chartLoading[ticker]=[callback];
+    var s=document.createElement("script");
+    s.src=url;
+    s.onload=function(){
+      var cbs2=_chartLoading[ticker]||[];
+      delete _chartLoading[ticker];
+      var data2=CHART_REGISTRY[ticker]?_expandChartRows(CHART_REGISTRY[ticker]):null;
+      for(var i=0;i<cbs2.length;i++)cbs2[i](data2);
+    };
+    s.onerror=function(){
+      var cbs2=_chartLoading[ticker]||[];
+      delete _chartLoading[ticker];
+      for(var i=0;i<cbs2.length;i++)cbs2[i](null);
+    };
+    document.head.appendChild(s);
+  }
 }
 // === END LAZY CHART LOADER ===
 
@@ -1121,6 +1147,32 @@ function testCell(pass,pctVal,cls){
   return'<td class="'+cls+'">'+tick(pass)+'</td>';
 }
 
+// UTR: format pct with 0dp, (X)% for negatives, colour-coded
+function utrPct(v){
+  if(v==null)return'<span class="neutral">&mdash;</span>';
+  var n=Number(v);
+  var txt=n<0?"("+Math.abs(n).toFixed(0)+"%)":n.toFixed(0)+"%";
+  var gc=n<=-15?"grad-dred":n<=-5?"grad-red":n>=-2?"grad-lgreen":n<=5?"grad-neutral":"grad-green";
+  return'<span class="'+gc+'">'+txt+'</span>';
+}
+// UTR: format MA distance with 0dp, (X)% for negatives, colour-coded
+function utrMaDist(v){
+  if(v==null)return'<span class="neutral">&mdash;</span>';
+  var n=Number(v);
+  var txt=n<0?"("+Math.abs(n).toFixed(0)+"%)":n.toFixed(0)+"%";
+  // Closer to 0 = better (near MA). Negative = broken below
+  var gc=n<-3?"grad-dred":n<0?"grad-red":n<=2?"grad-green":n<=5?"grad-lgreen":"grad-neutral";
+  return'<span class="'+gc+'">'+txt+'</span>';
+}
+// UTR: colour-code Test MA cell
+function utrTestMa(ma){
+  if(!ma)return"&mdash;";
+  if(ma==="50D")return'<span class="ma-50d">50D</span>';
+  if(ma==="100D")return'<span class="ma-100d">100D</span>';
+  if(ma==="150D")return'<span class="ma-150d">150D</span>';
+  if(ma==="200D")return'<span class="ma-200d">200D</span>';
+  return ma;
+}
 // UTR signal cell: shows pass/amber/fail or raw numeric value when toggled
 function utrSigCell(sig,rawVal,extraCls){
   var cls="col-filter"+(extraCls?" "+extraCls:"");
@@ -1320,6 +1372,46 @@ function commonCols(){
     +th("200D","_ma200","col-num col-price","200-day moving average","width:46px")
     +th("RS","rs_pct","col-num col-rs","Relative Strength percentile 0-100 (IBD composite)","width:32px");
 }
+// UTR-specific common cols: Ticker+Sector always visible, rest have col-input class
+function utrCommonCols(){
+  var tkrW=displayMode==="company"?"width:180px":"width:120px";
+  return th("Ticker","_display_name","col-txt col-identity","Stock ticker or company name",tkrW)
+    +th("Sector","_tax_sector","col-txt col-identity col-input","Sector","width:200px")
+    +th("Price","price","col-num col-price col-input","Price","width:52px")
+    +th("52WH","high_52w","col-num col-price col-input","52-week high","width:52px")
+    +th("52WL","low_52w","col-num col-price col-input","52-week low","width:52px")
+    +th("20D","_ma20","col-num col-price col-input","20-day MA","width:46px")
+    +th("50D","_ma50","col-num col-price col-input","50-day MA","width:46px")
+    +th("150D","_ma150","col-num col-price col-input","150-day MA","width:46px")
+    +th("200D","_ma200","col-num col-price col-input","200-day MA","width:46px")
+    +th("RS","rs_pct","col-num col-rs col-input","RS percentile","width:32px");
+}
+function utrCommonTds(r){
+  var tax=getTaxonomy(r.ticker);
+  var dn=(displayMode==="company")?(r.company||r.ticker):r.ticker;
+  var rc=r.rs_pct>=70?"var(--green)":r.rs_pct>=40?"var(--text)":"var(--red)";
+  var h52val,l52val;
+  if(valueMode==="pct"){
+    h52val='<td class="col-num col-price col-input '+(r.pct_52wh!=null?gradClass(-r.pct_52wh):"")+'">'+fpc(r.pct_52wh)+'</td>';
+    l52val='<td class="col-num col-price col-input '+(r.pct_52wl!=null?gradClass(r.pct_52wl):"")+'">'+fpc(r.pct_52wl)+'</td>';
+  } else {
+    h52val='<td class="col-num col-price col-input">'+fp(r.high_52w)+'</td>';
+    l52val='<td class="col-num col-price col-input">'+fp(r.low_52w)+'</td>';
+  }
+  var ma20=r.mas?r.mas["20D"]:null;
+  var ma50=r.mas?r.mas["50D"]:null;
+  var ma150=r.mas?r.mas["150D"]:null;
+  var ma200=r.mas?r.mas["200D"]:null;
+  return'<td class="col-txt col-identity">'+dn+'</td>'
+    +'<td class="col-txt col-identity col-input" title="'+tax.sector+'">'+tax.sector+'</td>'
+    +'<td class="col-num col-price col-input">'+fp(r.price)+'</td>'
+    +h52val+l52val
+    +'<td class="col-num col-price col-input">'+(ma20!=null?fp(ma20):"&mdash;")+'</td>'
+    +'<td class="col-num col-price col-input">'+(ma50!=null?fp(ma50):"&mdash;")+'</td>'
+    +'<td class="col-num col-price col-input">'+(ma150!=null?fp(ma150):"&mdash;")+'</td>'
+    +'<td class="col-num col-price col-input">'+(ma200!=null?fp(ma200):"&mdash;")+'</td>'
+    +'<td class="col-num col-rs col-input" style="color:'+rc+'">'+nf(r.rs_pct)+'</td>';
+}
 function commonTds(r){
   var tax=getTaxonomy(r.ticker);
   var dn=(displayMode==="company")?(r.company||r.ticker):r.ticker;
@@ -1492,6 +1584,8 @@ function buildHeaderControls(tabId){
       h+='<button class="group-toggle'+fAct+'" style="'+(utrFailedFilter===failFilters[ff].k?"background:#c62828;border-color:#c62828;color:#fff":"")+'" onclick="setUtrFailedFilter(\''+failFilters[ff].k+'\')">'+failFilters[ff].l+'</button>';
     }
     h+='</div>';
+    h+='<span style="border-left:1px solid var(--border);height:20px;margin:0 6px"></span>';
+    h+='<button class="group-toggle'+(utrShowInputs?" active":"")+'" onclick="toggleUtrInputs()">'+(utrShowInputs?"Hide Inputs":"Show Inputs")+'</button>';
   }
   el.innerHTML=h;
 
@@ -1524,7 +1618,7 @@ function renderMM99(){
   // FIX-7: Enrich ALL rows with MM99 test data first (for Live Portfolio tile)
   for(var j=0;j<allRows.length;j++){
     var r=allRows[j],mm=r.f.mm99;
-    if(!mm||!mm.group_a){r.mm99_score=0;r.stage="";r.t1=false;r.t2=false;r.t3=false;r.t4=false;r.t5=false;r.t6=false;r.t7=false;r.t8=false;r.t9=false;r.t10=false;r.t11=false;r.ga=false;r.gb=false;r.gc=false;r.gd=false;r.ge=false;r.pb_stage=r.f.probing_bet?r.f.probing_bet.stage:"";r.bp_stage=r.f.basing_plateau?r.f.basing_plateau.stage:"";r.t1_pct=null;r.t2_pct=null;r.t3_pct=null;r.t4_pct=null;r.t5_pct=null;r.t6_pct=null;r.t7_pct=null;r.t8_pct=null;rows.push(r);continue;}
+    if(!mm||!mm.group_a){r.mm99_score=0;r.stage="";r.t1=false;r.t2=false;r.t3=false;r.t4=false;r.t5=false;r.t6=false;r.t7=false;r.t8=false;r.t9=false;r.t10=false;r.t11=false;r.ga=false;r.gb=false;r.gc=false;r.gd=false;r.ge=false;r.pb_stage=r.f.probing_bet?r.f.probing_bet.stage:"";r.bp_stage=r.f.basing_plateau?r.f.basing_plateau.stage:"";r.t1_pct=null;r.t2_pct=null;r.t3_pct=null;r.t4_pct=null;r.t5_pct=null;r.t6_pct=null;r.t7_pct=null;r.t8_pct=null;r.ma200_months=null;continue;}
     r.mm99_score=mm.score_11;r.stage=mm.stage;
     r.t1=mm.group_a.tests.T1;r.t2=mm.group_a.tests.T2;r.t3=mm.group_b.tests.T3;r.t4=mm.group_b.tests.T4;
     r.t5=mm.group_c.tests.T5;r.t6=mm.group_c.tests.T6;r.t7=mm.group_d.tests.T7;r.t8=mm.group_d.tests.T8;
@@ -1641,6 +1735,7 @@ function renderMM99(){
 window.setMM99Score=function(s){mm99MinScore=s;renderTab("mm99")};
 window.setUtrMinCap=function(s){utrMinCap=s;renderTab("utr")};
 window.setUtrFailedFilter=function(f){utrFailedFilter=(utrFailedFilter===f)?"":f;renderTab("utr")};
+window.toggleUtrInputs=function(){utrShowInputs=!utrShowInputs;renderTab("utr")};
 
 // ================================================================
 // BASING PLATEAU TAB
@@ -1923,50 +2018,69 @@ function renderUTR(){
   h+=buildPortfolioTile(currentTab);
   rows=applyIndSecFilter(rows);
   h+='<h3 class="qualified-title" id="section-stocks">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</h3>';
-  h+='<div class="data-table-wrap"><table class="data-table"><thead>';
-  // ── Row 1: Stage group headers (MM99 pattern) ──
+  var inputHide=utrShowInputs?"":" utr-inputs-hidden";
+  h+='<div class="data-table-wrap"><table class="data-table'+inputHide+'"><thead>';
+  // ── Row 1: Key descriptions (shown by default on UTR only) ──
+  h+='<tr class="utr-key-row">';
+  h+='<td></td>';  // Ticker
+  h+='<td class="col-input"></td>';  // Sector
+  h+='<td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td><td class="col-input"></td>';  // Price..RS
+  h+='<td>Which MA</td><td>Retest #</td>';  // Test MA, Retest
+  h+='<td>Depth from high</td><td>Dist to MA</td>';  // Depth%, MA Dist%
+  h+='<td class="utr-e-first">Depth OK?</td><td>Near MA?</td><td>ST declining?</td><td class="utr-e-last">IT rising?</td>';  // Early
+  h+='<td class="utr-l-first">Vol fading?</td><td>Up vs down</td><td>Range tight?</td><td class="utr-l-last">Dist days</td>';  // Late
+  h+='<td class="utr-c-first">Candle qual</td><td class="utr-c-last">RS holding?</td>';  // Capital
+  h+='<td>Score</td>';  // C#
+  h+='<td></td>';  // Stage
+  h+='<td></td><td></td>';  // X-ref
+  h+=ratingsColHeaders().length>0?'<td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td><td class="col-ratings"></td>':"";
+  h+='</tr>';
+  // ── Row 2: Stage group headers (MM99 pattern) ──
   h+='<tr class="group-header-row">';
-  h+='<th colspan="2"></th><th colspan="8" style="background:rgba(100,100,100,0.06)">Inputs</th>';
-  h+='<th colspan="3" style="background:rgba(100,100,100,0.06)">Setup Info</th>';
+  h+='<th></th><th colspan="9" class="col-input" style="background:rgba(100,100,100,0.06)">Inputs</th>';
+  h+='<th colspan="2" style="background:rgba(100,100,100,0.06)">Setup</th>';
   h+='<th colspan="2" style="background:rgba(100,100,100,0.06)">Metrics</th>';
   h+='<th colspan="4" style="background:rgba(200,170,0,0.08)">Early</th>';
   h+='<th colspan="4" style="background:rgba(230,100,0,0.08)">+ Late</th>';
   h+='<th colspan="2" style="background:rgba(46,125,50,0.08)">+ Capital</th>';
-  h+='<th></th><th colspan="2" style="background:rgba(180,100,50,0.08)">X-Ref</th>';
+  h+='<th></th>';
+  h+='<th style="background:rgba(120,80,200,0.08)">Stage</th>';
+  h+='<th colspan="2" style="background:rgba(180,100,50,0.08)">X-Ref</th>';
   h+=ratingsColHeaders().length>0?'<th colspan="8" class="col-ratings">Ratings</th>':"";
   h+='</tr><tr class="col-header-row">';
-  // ── Row 2: Individual column headers ──
-  h+=commonCols()+th("Stage","utr_stage","col-txt col-filter","Pullback lifecycle: Early &rarr; Late &rarr; Capital. None = not in pullback or invalidated.")
-    +th("Test MA","test_ma","col-txt col-filter","Which moving average is price approaching from above? Scans 50D&rarr;100D&rarr;150D&rarr;200D for first within range.")
-    +th("Retest #","retest_num","col-num col-filter","How many times has price tested this MA and bounced? 1st retest = highest conviction (Minervini).")
-    +th("Depth %","depth_pct","col-num","How far has price fallen from its swing high? Raw percentage. Thresholds vary by stage.")
-    +th("MA Dist%","test_ma_dist","col-num","How far is price from the test MA? Positive = above MA. Negative = broken below.")
-    +th("Depth","t_depth","col-filter utr-e-first","Is the pullback depth in range? E: 3&ndash;10% &bull; L: 8&ndash;20% &bull; C: &lt;25%")
-    +th("MA Appr","t_ma","col-filter","Is price near the test MA? E: not tested &bull; L: within 5% &bull; C: within 2%")
-    +th("ST Roll","st_roll","col-filter","Are the 5D and 10D MAs declining? Confirms pullback is real.")
-    +th("IT OK","it_intact","col-filter utr-e-last","Are the 50D and 150D MAs still rising?")
-    +th("Vol Dry","vol_q","col-filter utr-l-first","Is selling volume fading? 10D/50D avg. L: &lt;0.85 &bull; C: &lt;0.80")
-    +th("Up/Dn","updn","col-filter","Up-day vol vs down-day vol. L: &gt;1.0 &bull; C: &gt;1.1")
-    +th("Contr","contr","col-filter","Range tightening? ATR10/ATR20. L: &lt;0.9 &bull; C: &lt;0.85")
-    +th("Dist","dist_d","col-filter utr-l-last","High-vol down days (25d). E: 0&ndash;1 &bull; L: 0&ndash;3 &bull; C: 0&ndash;2")
-    +th("Candle","candle","col-filter utr-c-first","% of last 10 closes in upper 40% of range. C: &ge;50%")
-    +th("RS","rs_h","col-filter utr-c-last","RS percentile. C: &ge;70. Below 50 = invalidation.")
-    +th("C#","cap_count","col-num","Capital tests passing (out of 8). All 8 = Capital stage.")
-    +th("MM 99","mm_stage","col-txt col-ref")+th("PB","pb_stage2","col-txt col-ref")
+  // ── Row 3: Individual column headers ──
+  h+=utrCommonCols()
+    +th("Test MA","test_ma","col-txt col-filter")
+    +th("Ret#","retest_num","col-num col-filter")
+    +th("Depth%","depth_pct","col-num")
+    +th("MA Dist","test_ma_dist","col-num")
+    +th("Depth","t_depth","col-filter utr-e-first")
+    +th("MA","t_ma","col-filter")
+    +th("ST","st_roll","col-filter")
+    +th("IT","it_intact","col-filter utr-e-last")
+    +th("Vol","vol_q","col-filter utr-l-first")
+    +th("U/D","updn","col-filter")
+    +th("Ctr","contr","col-filter")
+    +th("Dis","dist_d","col-filter utr-l-last")
+    +th("Cdl","candle","col-filter utr-c-first")
+    +th("RS","rs_h","col-filter utr-c-last")
+    +th("C#","cap_count","col-num")
+    +th("Stage","utr_stage","col-txt col-filter")
+    +th("MM99","mm_stage","col-txt col-ref")+th("PB","pb_stage2","col-txt col-ref")
     +ratingsColHeaders();
   h+='</tr></thead><tbody>';
   for(var j=0;j<rows.length;j++){
     var r=rows[j];
-    h+='<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+commonTds(r)
-      +'<td class="col-txt col-filter">'+badge(r.utr_stage)+'</td>'
-      +'<td class="col-txt col-filter">'+(r.test_ma||"&mdash;")+'</td>'
+    h+='<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+utrCommonTds(r)
+      +'<td class="col-txt col-filter">'+utrTestMa(r.test_ma)+'</td>'
       +'<td class="col-num col-filter">'+(r.retest_num?r.retest_num:"&mdash;")+'</td>'
-      +'<td class="col-num">'+(r.depth_pct!=null?r.depth_pct.toFixed(1)+"%":"&mdash;")+'</td>'
-      +'<td class="col-num">'+(r.test_ma_dist!=null?r.test_ma_dist.toFixed(1)+"%":"&mdash;")+'</td>'
+      +'<td class="col-num">'+utrPct(r.depth_pct)+'</td>'
+      +'<td class="col-num">'+utrMaDist(r.test_ma_dist)+'</td>'
       +utrSigCell(r.t_depth,r.t_depth_v,"utr-e-first")+utrSigCell(r.t_ma,r.t_ma_v,"")+utrSigCell(r.st_roll,r.st_roll_v,"")+utrSigCell(r.it_intact,r.it_intact_v,"utr-e-last")
       +utrSigCell(r.vol_q,r.vol_q_v,"utr-l-first")+utrSigCell(r.updn,r.updn_v,"")+utrSigCell(r.contr,r.contr_v,"")+utrSigCell(r.dist_d,r.dist_d_v,"utr-l-last")
       +utrSigCell(r.candle,r.candle_v,"utr-c-first")+utrSigCell(r.rs_h,r.rs_h_v,"utr-c-last")
       +'<td class="col-num">'+r.cap_count+'/8</td>'
+      +'<td class="col-txt col-filter">'+badge(r.utr_stage)+'</td>'
       +'<td class="col-txt col-ref">'+badge(r.mm_stage)+'</td><td class="col-txt col-ref">'+badge(r.pb_stage2)+'</td>'
       +ratingsColTds(r)+'</tr>';
   }
@@ -2368,6 +2482,7 @@ function updateIndSecPills(){
   }
 }
 function renderTab(id){
+  try{
   if(id==="mm99")renderMM99();
   else if(id==="bp")renderBP();
   else if(id==="pb")renderPB();
@@ -2383,6 +2498,7 @@ function renderTab(id){
     for(var j=0;j<TAB_IDS.length;j++){if(TAB_IDS[j]===id){renderPlaceholder(id,TAB_LABELS[j]);updateIndSecPills();return}}
     renderPlaceholder(id,id);
   }
+  }catch(e){console.error("renderTab("+id+") error:",e)}
   updateIndSecPills();
 }
 
