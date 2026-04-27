@@ -1,39 +1,34 @@
 {
   "stocks": [
     {
-      "ticker": "TEST1",
-      "yfinance_ticker": "TEST1.L",
-      "company_name": "Test Corp 1",
-      "sector": "Technology",
-      "industry": "Software"
+      "ticker": "ABB-SE",
+      "yfinance_ticker": "ABB.ST",
+      "company_name": "ABB Ltd",
+      "date_added": "2026-04-15",
+      "notes": "",
+      "target_ma": "50D",
+      "industry": "Industrials",
+      "sector": "Electrical Equipment"
     },
     {
-      "ticker": "TEST2",
-      "yfinance_ticker": "TEST2.L",
-      "company_name": "Test Corp 2",
-      "sector": "Healthcare",
-      "industry": "Pharma"
+      "ticker": "ALFA-SE",
+      "yfinance_ticker": "ALFA.ST",
+      "company_name": "Alfa Laval",
+      "date_added": "2026-04-15",
+      "notes": "",
+      "target_ma": "50D",
+      "industry": "Industrials",
+      "sector": "Industrial Machinery"
     },
     {
-      "ticker": "TEST3",
-      "yfinance_ticker": "TEST3.L",
-      "company_name": "Test Corp 3",
-      "sector": "Financials",
-      "industry": "Banks"
+      "ticker": "ALIV-SE",
+      "yfinance_ticker": "ALIV-SDB.ST",
+      "company_name": "Autoliv",
+      "date_added": "2026-04-15",
+      "notes": "",
+      "target_ma": "50D",
+      "industry": "Consumer Discretionary",
+      "sector": "Auto Components"
     },
     {
-      "ticker": "TEST4",
-      "yfinance_ticker": "TEST4.L",
-      "company_name": "Test Corp 4",
-      "sector": "Technology",
-      "industry": "Software"
-    },
-    {
-      "ticker": "TEST5",
-      "yfinance_ticker": "TEST5.L",
-      "company_name": "Test Corp 5",
-      "sector": "Healthcare",
-      "industry": "MedTech"
-    }
-  ]
-}
+      "ticker": "A

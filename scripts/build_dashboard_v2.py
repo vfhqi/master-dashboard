@@ -1815,26 +1815,41 @@ function renderUTR(){
     if(!ut||!ut.tests){
       r.utr_stage="";r.depth_pct=null;r.test_ma="";r.test_ma_dist=null;r.retest_num=0;
       r.vol_q="";r.updn="";r.candle="";r.dist_d="";r.contr="";r.rs_h="";
-      r.st_roll="";r.it_intact="";r.t_depth="";r.t_ma="";
+      r.st_roll="";r.it_intact="";
       r.cap_count=0;r.late_quality=0;
       r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";
       r.utr_capital=false;r.utr_late=false;r.utr_early=false;
       rows.push(r);continue;
     }
-    r.utr_stage=ut.stage;r.depth_pct=ut.depth_pct;r.test_ma=ut.test_ma||"";
-    r.test_ma_dist=ut.test_ma_dist;r.retest_num=ut.current_retest_num||0;
-    r.cap_count=ut.capital_count||0;r.late_quality=ut.late_quality||0;
+    r.utr_stage=ut.stage;
+    r.depth_pct=ut.depth_pct;
+    r.test_ma=ut.test_ma||"";
+    r.test_ma_dist=ut.test_ma_dist;
+    r.retest_num=ut.current_retest_num||0;
+    r.cap_count=ut.capital_count||0;
+    r.late_quality=ut.late_quality||0;
+    // Map tests to display columns based on stage context
     var t=ut.tests,stg=ut.stage;
+    // Depth: show stage-appropriate test
     r.t_depth=stg==="Capital"?t.c2_depth:stg==="Late"?t.l1_depth:t.e1_depth;
+    // MA approach/test
     r.t_ma=stg==="Capital"?t.c1_at_ma:t.l2_ma_approach;
+    // ST Roll (Early indicator)
     r.st_roll=t.e2_ma_roll;
+    // IT Intact (from ma_direction)
     var md=ut.ma_direction||{};
     r.it_intact=(md["50d_rising"]&&md["150d_rising"])?"pass":md["50d_rising"]?"amber":"fail";
+    // Volume quality — stage-tightened
     r.vol_q=stg==="Capital"?t.c3_vol:stg==="Late"?t.l3_vol_dry:t.e3_vol;
+    // Up/down ratio
     r.updn=stg==="Capital"?t.c4_updown:t.l4_updown;
+    // Candle quality (Capital only meaningful)
     r.candle=t.c5_candle;
+    // Distribution days — stage-tightened
     r.dist_d=stg==="Capital"?t.c6_dist:stg==="Late"?t.l6_dist:t.e4_dist;
+    // Contraction
     r.contr=stg==="Capital"?t.c7_contraction:t.l5_contraction;
+    // RS
     r.rs_h=t.c8_rs;
     r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";
     r.utr_capital=r.utr_stage==="Capital";r.utr_late=r.utr_stage==="Late"||r.utr_stage==="Capital";r.utr_early=r.utr_stage==="Early"||r.utr_stage==="Late"||r.utr_stage==="Capital";
@@ -1856,7 +1871,7 @@ function renderUTR(){
   h+='<div class="data-table-wrap"><table class="data-table"><thead><tr>';
   h+=commonCols()+th("Stage","utr_stage","col-txt col-filter","Pullback lifecycle: Early/Late/Capital/None")
     +th("Test MA","test_ma","col-txt col-filter","Which MA is being tested (50D/100D/150D/200D)")
-    +th("Ret#","retest_num","col-num col-filter","Completed retest cycles of this MA. 1st = highest conviction (Minervini)")
+    +th("Retest #","retest_num","col-num col-filter","Completed retest cycles of this MA. 1st = highest conviction (Minervini)")
     +th("Depth%","depth_pct","col-num","% below swing high. E:3-10% L:8-20% C:<25%")
     +th("MA Dist","test_ma_dist","col-num","% distance to test MA. L:<5% C:<2%")
     +th("Depth","t_depth","col-filter","Depth test (stage-adjusted): E:3-10% L:8-20% C:<25%")
@@ -2273,6 +2288,7 @@ function renderVal(){
   h+='</tbody></table></div>';
   container.innerHTML=h;
 }
+
 // ================================================================
 // TAB ROUTER
 // ================================================================
@@ -2286,142 +2302,4 @@ function renderPlaceholder(id,title){
 function updateIndSecPills(){
   var el=document.getElementById("indsec-pills");
   if(el)el.innerHTML=indSecFilterPills();
-  // Highlight sector/industry columns when filter active
-  var tables=document.querySelectorAll("table.data-table");
-  for(var t=0;t<tables.length;t++){
-    if(hasIndSecFilter())tables[t].classList.add("ind-sec-highlight");
-    else tables[t].classList.remove("ind-sec-highlight");
-  }
-}
-function renderTab(id){
-  if(id==="mm99")renderMM99();
-  else if(id==="bp")renderBP();
-  else if(id==="pb")renderPB();
-  else if(id==="utr")renderUTR();
-  else if(id==="vcp")renderVCP();
-  else if(id==="tech")renderTech();
-  else if(id==="combos")renderCombos();
-  else if(id==="positions")renderPositions();
-  else if(id==="ssem")renderSSEM();
-  else if(id==="val")renderVal();
-  else{
-    buildHeaderControls(id);
-    for(var j=0;j<TAB_IDS.length;j++){if(TAB_IDS[j]===id){renderPlaceholder(id,TAB_LABELS[j]);updateIndSecPills();return}}
-    renderPlaceholder(id,id);
-  }
-  updateIndSecPills();
-}
-
-// Init: hide ratings by default (FIX-3)
-var mainEl=document.querySelector(".main");
-if(mainEl)mainEl.classList.add("ratings-hidden");
-
-renderTab("mm99");
-})();
-"""
-
-    html = (
-        '<!DOCTYPE html>\n'
-        '<html lang="en">\n'
-        '<head>\n'
-        '<meta charset="UTF-8">\n'
-        '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
-        '<title>Master Dashboard &mdash; Viewforth</title>\n'
-        '<style>\n'
-        + css +
-        '\n</style>\n'
-        '</head>\n'
-        '<body>\n'
-        '<div class="header">\n'
-        '  <!-- FIX-5 Row 1: Title + stats + Key + Chart -->\n'
-        '  <div class="header-top">\n'
-        '    <div class="header-title">Master Dashboard</div>\n'
-        '    <div class="header-stats">\n'
-        '      <span>Stocks: <span class="stat-value" id="stat-count">&mdash;</span></span>\n'
-        '      <span>Data: <span class="stat-value" id="stat-source">&mdash;</span></span>\n'
-        '      <span>Updated: <span class="stat-value" id="stat-updated">&mdash;</span></span>\n'
-        '    </div>\n'
-        '    <div class="header-right-btns">\n'
-        '      <button class="ctrl-btn" onclick="openKey()">Key</button>\n'
-        '      <button class="ctrl-btn" onclick="openChart(\'Overview\')">Chart</button>\n'
-        '    </div>\n'
-        '  </div>\n'
-        '  <!-- FIX-5 Row 2: TABS label + tab navigation -->\n'
-        '  <div class="header-tabs-row">\n'
-        '    <span class="row-label">Tabs</span>\n'
-        '    <div class="tab-nav">' + tab_buttons + '</div>\n'
-        '  </div>\n'
-        '  <!-- Row 3: Toggles + Filters -->\n'
-        '  <div class="header-controls-row">\n'
-        '    <span class="row-label">Toggles</span>\n'
-        '    <button class="ctrl-btn" id="btn-display-mode" onclick="toggleDisplayMode()">Ticker</button>\n'
-        '    <button class="ctrl-btn" id="btn-value-mode" onclick="toggleValueMode()">&#10003;&#10007;</button>\n'
-        '    <button class="ctrl-btn" id="btn-ratings" onclick="toggleRatings()">Show case ratings</button><span id="indsec-pills"></span>\n'
-        '    <span style="border-left:1px solid var(--border);height:20px;margin:0 8px"></span>\n'
-        '    <span class="row-label" id="toggles-label">MM 99 Filters</span>\n'
-        '    <div id="header-tab-controls"></div>\n'
-        '    <div class="anchor-links">\n'
-        '      <span class="row-label" style="font-size:10px;margin-right:4px">Jump to</span>\n'
-        '      <a class="anchor-link" onclick="scrollToSection(\'section-summary\')">Summary</a>\n'
-        '      <a class="anchor-link" onclick="scrollToSection(\'section-industries\')">Industries</a>\n'
-        '      <a class="anchor-link" onclick="scrollToSection(\'section-sectors\')">Sectors</a>\n'
-        '      <a class="anchor-link" onclick="scrollToSection(\'section-portfolio\')">Live Portfolio</a>\n'
-        '      <a class="anchor-link" onclick="scrollToSection(\'section-stocks\')">Qualified Stocks</a>\n'
-        '      <span id="group-links"></span>\n'
-        '    </div>\n'
-        '  </div>\n'
-        '</div>\n'
-        '<!-- FIX-1: Key panel overlay -->\n'
-        '<div class="key-panel" id="key-panel"></div>\n'
-        '<div class="main ratings-hidden">' + tab_containers + '</div>\n'
-        '<div class="chart-panel" id="chart-panel">\n'
-        '  <div id="chart-container" style="width:100%;min-height:calc(100vh - 200px)">Click a stock row to view chart</div>\n'
-        '</div>\n'
-        '<script>/* DATA_INJECTION_POINT */</script>\n'
-        '<script>\n'
-        + js +
-        '\n</script>\n'
-        '</body>\n'
-        '</html>'
-    )
-
-    return html
-
-
-def main():
-    print("Loading data...")
-    data_js = load_data()
-    print("  Data JS: {:,} bytes".format(len(data_js)))
-
-    # Auto-backup existing index.html before writing
-    if OUTPUT_PATH.exists():
-        backup_dir = PROJECT_DIR / "backups"
-        backup_dir.mkdir(exist_ok=True)
-        ts = datetime.now().strftime("%Y%m%d_%H%M")
-        backup_path = backup_dir / "index_{}.html".format(ts)
-        shutil.copy2(OUTPUT_PATH, backup_path)
-        print("  Pre-write backup: {}".format(backup_path))
-
-    print("Building HTML...")
-    html = build_html(data_js)
-    html = html.replace("/* DATA_INJECTION_POINT */", data_js)
-
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        f.write(html)
-
-    size = os.path.getsize(OUTPUT_PATH)
-    print("  Written: {} ({:,} bytes)".format(OUTPUT_PATH, size))
-
-    # Post-write backup
-    backup_dir = PROJECT_DIR / "backups"
-    backup_dir.mkdir(exist_ok=True)
-    ts = datetime.now().strftime("%Y%m%d_%H%M")
-    backup_path = backup_dir / "index_post_{}.html".format(ts)
-    shutil.copy2(OUTPUT_PATH, backup_path)
-    print("  Post-write backup: {}".format(backup_path))
-    print("Done.")
-
-
-if __name__ == "__main__":
-    main()
+ 
