@@ -368,6 +368,7 @@ var priceMap={},filterMap={},tmMap=D.ticker_mapping||{};
 var currentTab="mm99",currentSort={col:"mm99_score",dir:"desc"};
 var mm99MinScore=0;
 var utrMinCap=0;
+var utrStageFilter="";  // ""=all, "early"=Early+, "late"=Late+, "capital"=Capital only
 var utrFailedFilter="";  // ""=off, "L1W"=last 1 week, "L1M"=last 1 month
 var utrShowInputs=false;  // default hidden
 var displayMode="ticker";
@@ -1569,16 +1570,16 @@ function buildHeaderControls(tabId){
     }
     h+='</div>';
   } else if(tabId==="utr"){
-    h+='<div class="score-filter">';
-    var capScores=[0,5,6,7,8];
-    for(var cs=0;cs<capScores.length;cs++){
-      var cLb=capScores[cs]===0?"All":(capScores[cs]+"/8+");
-      h+='<button class="score-btn'+(utrMinCap===capScores[cs]?" active":"")+'" onclick="setUtrMinCap('+capScores[cs]+')">'+cLb+'</button>';
+    h+='<div class="group-toggles">';
+    var stgBtns=[{k:"early",l:"Early+"},{k:"late",l:"Late+"},{k:"capital",l:"Capital"}];
+    for(var sb=0;sb<stgBtns.length;sb++){
+      var sAct=utrStageFilter===stgBtns[sb].k?" active":"";
+      h+='<button class="group-toggle'+sAct+'" onclick="setUtrStageFilter(\''+stgBtns[sb].k+'\')">'+stgBtns[sb].l+'</button>';
     }
     h+='</div>';
     h+='<span style="border-left:1px solid var(--border);height:20px;margin:0 6px"></span>';
     h+='<div class="group-toggles">';
-    var failFilters=[{k:"L1W",l:"Failed L1W"},{k:"L1M",l:"Failed L1M"}];
+    var failFilters=[{k:"L1W",l:"Failed Retest (shallow)"},{k:"L1M",l:"Failed Retest (all)"}];
     for(var ff=0;ff<failFilters.length;ff++){
       var fAct=utrFailedFilter===failFilters[ff].k?" active":"";
       h+='<button class="group-toggle'+fAct+'" style="'+(utrFailedFilter===failFilters[ff].k?"background:#c62828;border-color:#c62828;color:#fff":"")+'" onclick="setUtrFailedFilter(\''+failFilters[ff].k+'\')">'+failFilters[ff].l+'</button>';
@@ -1596,13 +1597,18 @@ function buildHeaderControls(tabId){
     var GROUP_LINKS={
       mm99:[{k:"ga",l:"Long-term"},{k:"gb",l:"Mid-term"},{k:"gc",l:"Short-term"},{k:"gd",l:"Leadership"},{k:"ge",l:"Rel. Strength"}],
       bp:[{k:"ga",l:"Loose"},{k:"gb",l:"Medium"},{k:"gc",l:"Tight"}],
-      utr:[{k:"utr_early",l:"Early+"},{k:"utr_late",l:"Late+"},{k:"utr_capital",l:"Capital"}],
+      utr:[{k:"early",l:"Early+",fn:"setUtrStageFilter"},{k:"late",l:"Late+",fn:"setUtrStageFilter"},{k:"capital",l:"Capital",fn:"setUtrStageFilter"}],
       pb:[{k:"ga",l:"Early"},{k:"gb",l:"Late"},{k:"gc",l:"Dead Cat"},{k:"gd",l:"PB1"},{k:"ge",l:"PB2"}]
     };
     var links=GROUP_LINKS[tabId];
     if(links){
       for(var gl2=0;gl2<links.length;gl2++){
-        gh+='<a class="anchor-link" onclick="scrollToSection(\'grp-'+links[gl2].k+'\')">'+links[gl2].l+'</a>';
+        var lk=links[gl2];
+        if(lk.fn){
+          gh+='<a class="anchor-link" onclick="'+lk.fn+'(\''+lk.k+'\');setTimeout(function(){scrollToSection(\'section-stocks\')},50)">'+lk.l+'</a>';
+        } else {
+          gh+='<a class="anchor-link" onclick="scrollToSection(\'grp-'+lk.k+'\')">'+lk.l+'</a>';
+        }
       }
     }
     gl.innerHTML=gh;
@@ -1734,6 +1740,7 @@ function renderMM99(){
 }
 window.setMM99Score=function(s){mm99MinScore=s;renderTab("mm99")};
 window.setUtrMinCap=function(s){utrMinCap=s;renderTab("utr")};
+window.setUtrStageFilter=function(s){utrStageFilter=(utrStageFilter===s)?"":s;renderTab("utr")};
 window.setUtrFailedFilter=function(f){utrFailedFilter=(utrFailedFilter===f)?"":f;renderTab("utr")};
 window.toggleUtrInputs=function(){utrShowInputs=!utrShowInputs;renderTab("utr")};
 
@@ -2012,7 +2019,9 @@ function renderUTR(){
     rows.push(r);
   }
   // Apply UTR header filters
-  if(utrMinCap>0){rows=rows.filter(function(r2){return r2.cap_count>=utrMinCap})}
+  if(utrStageFilter==="capital"){rows=rows.filter(function(r2){return r2.utr_stage==="Capital"})}
+  else if(utrStageFilter==="late"){rows=rows.filter(function(r2){return r2.utr_stage==="Late"||r2.utr_stage==="Capital"})}
+  else if(utrStageFilter==="early"){rows=rows.filter(function(r2){return r2.utr_stage==="Early"||r2.utr_stage==="Late"||r2.utr_stage==="Capital"})}
   if(utrFailedFilter==="L1W"){rows=rows.filter(function(r2){return r2.utr_failed&&!r2.utr_failed_deep})}
   else if(utrFailedFilter==="L1M"){rows=rows.filter(function(r2){return r2.utr_failed})}
   rows=sortData(rows,currentSort.col,currentSort.dir);
