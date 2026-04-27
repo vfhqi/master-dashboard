@@ -327,6 +327,7 @@ table.data-table td.col-identity{white-space:nowrap}
 .key-panel{display:none}
 table.data-table th .key-tip{display:none;position:absolute;top:100%;left:0;z-index:20;background:#fbfaf5;border:1px solid #e8e3d4;border-radius:4px;padding:4px 8px;font-size:10px;font-weight:400;color:#6b6b6b;white-space:normal;min-width:140px;max-width:220px;box-shadow:0 2px 8px rgba(0,0,0,.08);text-transform:none;letter-spacing:0;line-height:1.3;pointer-events:none}
 table.data-table.show-keys th .key-tip{display:block}
+table.data-table.show-keys th{overflow:visible}
 table.data-table th{position:relative}
 
 /* FIX-3: Ratings columns toggle */
@@ -335,21 +336,16 @@ table.data-table th{position:relative}
 /* FIX-2: Qualified Stocks heading */
 .qualified-title{font-size:14px;font-weight:600;color:var(--text-bright);margin:12px 0 8px;padding-left:4px}
 
-/* UTR V2: Stage group header row */
-.utr-group-row th{font-size:10px;font-weight:700;text-align:center;padding:3px 4px;letter-spacing:.5px;border-bottom:none;white-space:nowrap;cursor:default}
-.utr-group-blank{background:#f0ede3!important;border-bottom:none!important}
-.utr-group-hdr{color:#555;text-transform:uppercase}
-.utr-grp-info{background:#f5f3eb!important}
-.utr-grp-metric{background:#f5f3eb!important}
-.utr-grp-early{color:#7b6200!important}
-.utr-grp-late{color:#bf360c!important}
-.utr-grp-capital{color:#1b5e20!important}
-.utr-grp-ref{background:#f5f3eb!important}
-/* UTR V2: Two-line column headers */
-th.utr-col-early,th.utr-col-late,th.utr-col-capital{white-space:normal;line-height:1.25;min-width:54px;vertical-align:bottom}
-th.utr-col-early{background:#fffcf0!important}
-th.utr-col-late{background:#fff8f0!important}
-th.utr-col-capital{background:#f0faf0!important}
+/* UTR V2: Stage group borders (MM99 pattern) */
+.utr-e-first{border-left:2px solid rgba(200,170,0,0.30)}
+.utr-e-last{border-right:2px solid rgba(200,170,0,0.30)}
+th.utr-e-first,th.utr-e-last{border-top:2px solid rgba(200,170,0,0.30)}
+.utr-l-first{border-left:2px solid rgba(230,100,0,0.30)}
+.utr-l-last{border-right:2px solid rgba(230,100,0,0.30)}
+th.utr-l-first,th.utr-l-last{border-top:2px solid rgba(230,100,0,0.30)}
+.utr-c-first{border-left:2px solid rgba(46,125,50,0.30)}
+.utr-c-last{border-right:2px solid rgba(46,125,50,0.30)}
+th.utr-c-first,th.utr-c-last{border-top:2px solid rgba(46,125,50,0.30)}
 
 @media(max-width:768px){.header-stats{display:none}.ind-sec-wrap{flex-direction:column}}
 /* FEAT-5: Industry/sector filter highlight */
@@ -365,6 +361,8 @@ var D=MASTER_DATA;
 var priceMap={},filterMap={},tmMap=D.ticker_mapping||{};
 var currentTab="mm99",currentSort={col:"mm99_score",dir:"desc"};
 var mm99MinScore=0;
+var utrMinCap=0;
+var utrFailedFilter="";  // ""=off, "L1W"=last 1 week, "L1M"=last 1 month
 var displayMode="ticker";
 var valueMode="tick";
 var showRatings=false;
@@ -966,11 +964,16 @@ window.toggleGroup=function(grp){
   renderTab(currentTab);
 };
 
+function _sigRank(v){return v==="pass"?3:v==="amber"?2:v==="fail"?1:0}
 function sortData(data,col,dir){
   return data.slice().sort(function(a,b){
     var av=gnv(a,col),bv=gnv(b,col);
     if(av===null||av===undefined)av=dir==="asc"?Infinity:-Infinity;
     if(bv===null||bv===undefined)bv=dir==="asc"?Infinity:-Infinity;
+    // Sort pass/amber/fail signals numerically
+    if(av==="pass"||av==="amber"||av==="fail"||bv==="pass"||bv==="amber"||bv==="fail"){av=_sigRank(av);bv=_sigRank(bv);return dir==="asc"?av-bv:bv-av}
+    // Sort stage badges: Capital > Late > Early > None
+    var stgMap={"Capital":4,"Late":3,"Early":2};if(stgMap[av]||stgMap[bv]){av=stgMap[av]||0;bv=stgMap[bv]||0;return dir==="asc"?av-bv:bv-av}
     if(typeof av==="string")return dir==="asc"?av.localeCompare(bv):bv.localeCompare(av);
     if(typeof av==="boolean"){av=av?1:0;bv=bv?1:0}
     return dir==="asc"?av-bv:bv-av;
@@ -1116,6 +1119,17 @@ function testCell(pass,pctVal,cls){
     return'<td class="'+cls+' col-num '+gc+'">'+fpc1(pctVal)+'</td>';
   }
   return'<td class="'+cls+'">'+tick(pass)+'</td>';
+}
+
+// UTR signal cell: shows pass/amber/fail or raw numeric value when toggled
+function utrSigCell(sig,rawVal,extraCls){
+  var cls="col-filter"+(extraCls?" "+extraCls:"");
+  if(valueMode==="pct"&&rawVal!=null){
+    return'<td class="'+cls+' col-num" style="font-size:10px">'+rawVal+'</td>';
+  }
+  var sc=sig==="pass"?"pass":sig==="amber"?"amber":sig==="fail"?"fail":"neutral";
+  var icon=sig==="pass"?'<span class="tick">&#10003;</span>':sig==="amber"?'<span style="color:var(--amber);font-weight:700">&#9679;</span>':'<span class="cross">&#10007;</span>';
+  return'<td class="'+cls+' '+sc+'">'+icon+'</td>';
 }
 
 function sumStat(l,v,c){return'<div class="summary-stat"><span class="label">'+l+'</span><span class="value'+(c?" "+c:"")+'">'+v+'</span></div>'}
@@ -1306,10 +1320,6 @@ function commonCols(){
     +th("200D","_ma200","col-num col-price","200-day moving average","width:46px")
     +th("RS","rs_pct","col-num col-rs","Relative Strength percentile 0-100 (IBD composite)","width:32px");
 }
-function commonColCount(){return 10}
-function ratingsGroupHeader(){
-  return'<th colspan="8" class="utr-group-hdr utr-grp-ref">RATINGS</th>';
-}
 function commonTds(r){
   var tax=getTaxonomy(r.ticker);
   var dn=(displayMode==="company")?(r.company||r.ticker):r.ticker;
@@ -1466,6 +1476,22 @@ function buildHeaderControls(tabId){
       h+='<button class="group-toggle'+eAct+'" style="'+(pbExcludes[exGrps[e2].k]?"background:#c62828;border-color:#c62828;color:#fff":"")+'" onclick="togglePbExclude(\''+exGrps[e2].k+'\')">'+exGrps[e2].l+'</button>';
     }
     h+='</div>';
+  } else if(tabId==="utr"){
+    h+='<div class="score-filter">';
+    var capScores=[0,5,6,7,8];
+    for(var cs=0;cs<capScores.length;cs++){
+      var cLb=capScores[cs]===0?"All":(capScores[cs]+"/8+");
+      h+='<button class="score-btn'+(utrMinCap===capScores[cs]?" active":"")+'" onclick="setUtrMinCap('+capScores[cs]+')">'+cLb+'</button>';
+    }
+    h+='</div>';
+    h+='<span style="border-left:1px solid var(--border);height:20px;margin:0 6px"></span>';
+    h+='<div class="group-toggles">';
+    var failFilters=[{k:"L1W",l:"Failed L1W"},{k:"L1M",l:"Failed L1M"}];
+    for(var ff=0;ff<failFilters.length;ff++){
+      var fAct=utrFailedFilter===failFilters[ff].k?" active":"";
+      h+='<button class="group-toggle'+fAct+'" style="'+(utrFailedFilter===failFilters[ff].k?"background:#c62828;border-color:#c62828;color:#fff":"")+'" onclick="setUtrFailedFilter(\''+failFilters[ff].k+'\')">'+failFilters[ff].l+'</button>';
+    }
+    h+='</div>';
   }
   el.innerHTML=h;
 
@@ -1476,6 +1502,7 @@ function buildHeaderControls(tabId){
     var GROUP_LINKS={
       mm99:[{k:"ga",l:"Long-term"},{k:"gb",l:"Mid-term"},{k:"gc",l:"Short-term"},{k:"gd",l:"Leadership"},{k:"ge",l:"Rel. Strength"}],
       bp:[{k:"ga",l:"Loose"},{k:"gb",l:"Medium"},{k:"gc",l:"Tight"}],
+      utr:[{k:"utr_early",l:"Early+"},{k:"utr_late",l:"Late+"},{k:"utr_capital",l:"Capital"}],
       pb:[{k:"ga",l:"Early"},{k:"gb",l:"Late"},{k:"gc",l:"Dead Cat"},{k:"gd",l:"PB1"},{k:"ge",l:"PB2"}]
     };
     var links=GROUP_LINKS[tabId];
@@ -1612,6 +1639,8 @@ function renderMM99(){
   document.getElementById("tab-mm99").innerHTML=h;
 }
 window.setMM99Score=function(s){mm99MinScore=s;renderTab("mm99")};
+window.setUtrMinCap=function(s){utrMinCap=s;renderTab("utr")};
+window.setUtrFailedFilter=function(f){utrFailedFilter=(utrFailedFilter===f)?"":f;renderTab("utr")};
 
 // ================================================================
 // BASING PLATEAU TAB
@@ -1837,6 +1866,8 @@ function renderUTR(){
       r.vol_q="";r.updn="";r.candle="";r.dist_d="";r.contr="";r.rs_h="";
       r.st_roll="";r.it_intact="";r.t_depth="";r.t_ma="";
       r.cap_count=0;r.late_quality=0;
+      r.t_depth_v=null;r.t_ma_v=null;r.st_roll_v=null;r.it_intact_v=null;
+      r.vol_q_v=null;r.updn_v=null;r.contr_v=null;r.dist_d_v=null;r.candle_v=null;r.rs_h_v=null;
       r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";
       r.utr_capital=false;r.utr_late=false;r.utr_early=false;
       rows.push(r);continue;
@@ -1845,6 +1876,7 @@ function renderUTR(){
     r.test_ma_dist=ut.test_ma_dist;r.retest_num=ut.current_retest_num||0;
     r.cap_count=ut.capital_count||0;r.late_quality=ut.late_quality||0;
     var t=ut.tests,stg=ut.stage;
+    var mx=ut.metrics||{};
     r.t_depth=stg==="Capital"?t.c2_depth:stg==="Late"?t.l1_depth:t.e1_depth;
     r.t_ma=stg==="Capital"?t.c1_at_ma:t.l2_ma_approach;
     r.st_roll=t.e2_ma_roll;
@@ -1854,12 +1886,30 @@ function renderUTR(){
     r.updn=stg==="Capital"?t.c4_updown:t.l4_updown;
     r.candle=t.c5_candle;
     r.dist_d=stg==="Capital"?t.c6_dist:stg==="Late"?t.l6_dist:t.e4_dist;
+    // Raw numeric values for toggle display
+    r.t_depth_v=r.depth_pct!=null?r.depth_pct.toFixed(1)+"%":null;
+    r.t_ma_v=r.test_ma_dist!=null?r.test_ma_dist.toFixed(1)+"%":null;
+    r.st_roll_v=(md["5d_declining"]?"5D\u2193":"5D\u2192")+" "+(md["10d_declining"]?"10D\u2193":"10D\u2192");
+    r.it_intact_v=(md["50d_rising"]?"50D\u2191":"50D\u2193")+" "+(md["150d_rising"]?"150D\u2191":"150D\u2193");
+    r.vol_q_v=mx.vol_trend!=null?mx.vol_trend.toFixed(2):null;
+    r.updn_v=mx.updown_ratio!=null?mx.updown_ratio.toFixed(2):null;
+    r.contr_v=mx.contraction!=null?mx.contraction.toFixed(2):null;
+    r.dist_d_v=mx.dist_days!=null?mx.dist_days:null;
+    r.candle_v=mx.candle_quality!=null?(mx.candle_quality*100).toFixed(0)+"%":null;
+    r.rs_h_v=mx.rs_percentile!=null?mx.rs_percentile:null;
     r.contr=stg==="Capital"?t.c7_contraction:t.l5_contraction;
     r.rs_h=t.c8_rs;
     r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";
     r.utr_capital=r.utr_stage==="Capital";r.utr_late=r.utr_stage==="Late"||r.utr_stage==="Capital";r.utr_early=r.utr_stage==="Early"||r.utr_stage==="Late"||r.utr_stage==="Capital";
+    // Failed retest = price has broken below the test MA (negative distance)
+    r.utr_failed=r.test_ma_dist!=null&&r.test_ma_dist<0;
+    r.utr_failed_deep=r.test_ma_dist!=null&&r.test_ma_dist<-3;  // deep break = probably >1 week
     rows.push(r);
   }
+  // Apply UTR header filters
+  if(utrMinCap>0){rows=rows.filter(function(r2){return r2.cap_count>=utrMinCap})}
+  if(utrFailedFilter==="L1W"){rows=rows.filter(function(r2){return r2.utr_failed&&!r2.utr_failed_deep})}
+  else if(utrFailedFilter==="L1M"){rows=rows.filter(function(r2){return r2.utr_failed})}
   rows=sortData(rows,currentSort.col,currentSort.dir);
   var totalCount=allRows.length;
   var cap=0,lat=0,ear=0;
@@ -1874,59 +1924,48 @@ function renderUTR(){
   rows=applyIndSecFilter(rows);
   h+='<h3 class="qualified-title" id="section-stocks">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</h3>';
   h+='<div class="data-table-wrap"><table class="data-table"><thead>';
-  // ── Row 1: Stage group headers ──
-  h+='<tr class="utr-group-row">';
-  var ccCount=commonColCount();
-  h+='<th colspan="'+ccCount+'" class="utr-group-blank"></th>';
-  h+='<th colspan="3" class="utr-group-hdr utr-grp-info">SETUP INFO</th>';
-  h+='<th colspan="2" class="utr-group-hdr utr-grp-metric">METRICS</th>';
-  h+='<th colspan="4" class="utr-group-hdr utr-grp-early" style="background:#fff8e1;border-bottom:3px solid #f9a825;">EARLY (E)</th>';
-  h+='<th colspan="4" class="utr-group-hdr utr-grp-late" style="background:#fff3e0;border-bottom:3px solid #ef6c00;">+ LATE (L)</th>';
-  h+='<th colspan="2" class="utr-group-hdr utr-grp-capital" style="background:#e8f5e9;border-bottom:3px solid #2e7d32;">+ CAPITAL (C)</th>';
-  h+='<th class="utr-group-hdr utr-grp-info">SCORE</th>';
-  h+='<th colspan="2" class="utr-group-hdr utr-grp-ref">X-REF</th>';
-  h+=ratingsGroupHeader();
-  h+='</tr>';
-  // ── Row 2: Individual column headers (two-line labels) ──
-  h+='<tr>';
+  // ── Row 1: Stage group headers (MM99 pattern) ──
+  h+='<tr class="group-header-row">';
+  h+='<th colspan="2"></th><th colspan="8" style="background:rgba(100,100,100,0.06)">Inputs</th>';
+  h+='<th colspan="3" style="background:rgba(100,100,100,0.06)">Setup Info</th>';
+  h+='<th colspan="2" style="background:rgba(100,100,100,0.06)">Metrics</th>';
+  h+='<th colspan="4" style="background:rgba(200,170,0,0.08)">Early</th>';
+  h+='<th colspan="4" style="background:rgba(230,100,0,0.08)">+ Late</th>';
+  h+='<th colspan="2" style="background:rgba(46,125,50,0.08)">+ Capital</th>';
+  h+='<th></th><th colspan="2" style="background:rgba(180,100,50,0.08)">X-Ref</th>';
+  h+=ratingsColHeaders().length>0?'<th colspan="8" class="col-ratings">Ratings</th>':"";
+  h+='</tr><tr class="col-header-row">';
+  // ── Row 2: Individual column headers ──
   h+=commonCols()+th("Stage","utr_stage","col-txt col-filter","Pullback lifecycle: Early &rarr; Late &rarr; Capital. None = not in pullback or invalidated.")
-    +th("Test<br>MA","test_ma","col-txt col-filter","Which moving average is price approaching from above? Scans 50D&rarr;100D&rarr;150D&rarr;200D for first within range.")
-    +th("Retest<br>#","retest_num","col-num col-filter","How many times has price tested this MA and bounced? 1st retest = highest conviction (Minervini).")
-    +th("Depth<br>%","depth_pct","col-num","How far has price fallen from its swing high? Raw percentage. Thresholds vary by stage.")
-    +th("MA<br>Dist%","test_ma_dist","col-num","How far is price from the test MA? Positive = above MA. Negative = broken below.")
-    +th("Depth<br>Test","t_depth","col-filter utr-col-early","Is the pullback depth in range for this stage? E: 3&ndash;10% &bull; L: 8&ndash;20% &bull; C: &lt;25%")
-    +th("MA<br>Approach","t_ma","col-filter utr-col-early","Is price near the test MA? E: not tested &bull; L: within 5% &bull; C: within 2%")
-    +th("ST MAs<br>Rolling","st_roll","col-filter utr-col-early","Are the 5D and 10D MAs declining? Confirms the pullback is real, not just a flat pause.")
-    +th("IT MAs<br>Intact","it_intact","col-filter utr-col-early","Are the 50D and 150D MAs still rising? If not, the uptrend itself may be failing.")
-    +th("Volume<br>Drying","vol_q","col-filter utr-col-late","Is selling volume fading? 10D avg vol vs 50D avg vol. L: &lt;0.85 &bull; C: &lt;0.80. Lower = less selling pressure.")
-    +th("Up/Down<br>Vol","updn","col-filter utr-col-late","Are up-days seeing more volume than down-days? L: &gt;1.0 &bull; C: &gt;1.1. Shows accumulation on dips.")
-    +th("Volatility<br>Coiling","contr","col-filter utr-col-late","Is the range tightening? ATR(10) / ATR(20). L: &lt;0.9 &bull; C: &lt;0.85. Contraction precedes breakouts.")
-    +th("Dist<br>Days","dist_d","col-filter utr-col-late","High-volume down days in last 25 sessions. E: 0&ndash;1 &bull; L: 0&ndash;3 &bull; C: 0&ndash;2. Institutional selling signal.")
-    +th("Candle<br>Quality","candle","col-filter utr-col-capital","% of last 10 closes in upper 40% of daily range. C: &ge;50%. Shows buyers stepping in at the MA.")
-    +th("Relative<br>Strength","rs_h","col-filter utr-col-capital","RS percentile vs universe. C: &ge;70 required. Below 50 = invalidation. Leaders hold RS in pullbacks.")
-    +th("Capital<br>Score","cap_count","col-num","How many of the 8 Capital tests pass? All 8 required for Capital stage. Track Late stocks approaching 8/8.")
+    +th("Test MA","test_ma","col-txt col-filter","Which moving average is price approaching from above? Scans 50D&rarr;100D&rarr;150D&rarr;200D for first within range.")
+    +th("Retest #","retest_num","col-num col-filter","How many times has price tested this MA and bounced? 1st retest = highest conviction (Minervini).")
+    +th("Depth %","depth_pct","col-num","How far has price fallen from its swing high? Raw percentage. Thresholds vary by stage.")
+    +th("MA Dist%","test_ma_dist","col-num","How far is price from the test MA? Positive = above MA. Negative = broken below.")
+    +th("Depth","t_depth","col-filter utr-e-first","Is the pullback depth in range? E: 3&ndash;10% &bull; L: 8&ndash;20% &bull; C: &lt;25%")
+    +th("MA Appr","t_ma","col-filter","Is price near the test MA? E: not tested &bull; L: within 5% &bull; C: within 2%")
+    +th("ST Roll","st_roll","col-filter","Are the 5D and 10D MAs declining? Confirms pullback is real.")
+    +th("IT OK","it_intact","col-filter utr-e-last","Are the 50D and 150D MAs still rising?")
+    +th("Vol Dry","vol_q","col-filter utr-l-first","Is selling volume fading? 10D/50D avg. L: &lt;0.85 &bull; C: &lt;0.80")
+    +th("Up/Dn","updn","col-filter","Up-day vol vs down-day vol. L: &gt;1.0 &bull; C: &gt;1.1")
+    +th("Contr","contr","col-filter","Range tightening? ATR10/ATR20. L: &lt;0.9 &bull; C: &lt;0.85")
+    +th("Dist","dist_d","col-filter utr-l-last","High-vol down days (25d). E: 0&ndash;1 &bull; L: 0&ndash;3 &bull; C: 0&ndash;2")
+    +th("Candle","candle","col-filter utr-c-first","% of last 10 closes in upper 40% of range. C: &ge;50%")
+    +th("RS","rs_h","col-filter utr-c-last","RS percentile. C: &ge;70. Below 50 = invalidation.")
+    +th("C#","cap_count","col-num","Capital tests passing (out of 8). All 8 = Capital stage.")
     +th("MM 99","mm_stage","col-txt col-ref")+th("PB","pb_stage2","col-txt col-ref")
     +ratingsColHeaders();
   h+='</tr></thead><tbody>';
   for(var j=0;j<rows.length;j++){
     var r=rows[j];
-    var sigCls=function(sv){return sv==="pass"?"pass":sv==="amber"?"amber":sv==="fail"?"fail":"neutral"};
     h+='<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+commonTds(r)
       +'<td class="col-txt col-filter">'+badge(r.utr_stage)+'</td>'
       +'<td class="col-txt col-filter">'+(r.test_ma||"&mdash;")+'</td>'
       +'<td class="col-num col-filter">'+(r.retest_num?r.retest_num:"&mdash;")+'</td>'
       +'<td class="col-num">'+(r.depth_pct!=null?r.depth_pct.toFixed(1)+"%":"&mdash;")+'</td>'
       +'<td class="col-num">'+(r.test_ma_dist!=null?r.test_ma_dist.toFixed(1)+"%":"&mdash;")+'</td>'
-      +'<td class="col-filter '+sigCls(r.t_depth)+'">'+r.t_depth+'</td>'
-      +'<td class="col-filter '+sigCls(r.t_ma)+'">'+r.t_ma+'</td>'
-      +'<td class="col-filter '+sigCls(r.st_roll)+'">'+r.st_roll+'</td>'
-      +'<td class="col-filter '+sigCls(r.it_intact)+'">'+r.it_intact+'</td>'
-      +'<td class="col-filter '+sigCls(r.vol_q)+'">'+r.vol_q+'</td>'
-      +'<td class="col-filter '+sigCls(r.updn)+'">'+r.updn+'</td>'
-      +'<td class="col-filter '+sigCls(r.candle)+'">'+r.candle+'</td>'
-      +'<td class="col-filter '+sigCls(r.dist_d)+'">'+r.dist_d+'</td>'
-      +'<td class="col-filter '+sigCls(r.contr)+'">'+r.contr+'</td>'
-      +'<td class="col-filter '+sigCls(r.rs_h)+'">'+r.rs_h+'</td>'
+      +utrSigCell(r.t_depth,r.t_depth_v,"utr-e-first")+utrSigCell(r.t_ma,r.t_ma_v,"")+utrSigCell(r.st_roll,r.st_roll_v,"")+utrSigCell(r.it_intact,r.it_intact_v,"utr-e-last")
+      +utrSigCell(r.vol_q,r.vol_q_v,"utr-l-first")+utrSigCell(r.updn,r.updn_v,"")+utrSigCell(r.contr,r.contr_v,"")+utrSigCell(r.dist_d,r.dist_d_v,"utr-l-last")
+      +utrSigCell(r.candle,r.candle_v,"utr-c-first")+utrSigCell(r.rs_h,r.rs_h_v,"utr-c-last")
       +'<td class="col-num">'+r.cap_count+'/8</td>'
       +'<td class="col-txt col-ref">'+badge(r.mm_stage)+'</td><td class="col-txt col-ref">'+badge(r.pb_stage2)+'</td>'
       +ratingsColTds(r)+'</tr>';
