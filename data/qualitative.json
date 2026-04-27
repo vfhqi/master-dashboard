@@ -1,0 +1,42 @@
+{
+  "EKTA": {
+    "p1": "C+",
+    "p2": "B-",
+    "p3": "C+",
+    "p4": "C+",
+    "p5": "C",
+    "p6": "C+",
+    "conviction": "C+ \u2014 strengthening; Evo traction confirmed, margin recovery underway, China stabilising",
+    "stage": "ESA"
+  },
+  "ENAV": {
+    "p1": "B+",
+    "p2": "A-",
+    "p3": "A-",
+    "p4": "B+",
+    "p5": "B+",
+    "p6": "B+",
+    "conviction": "B- \u2014 ESA-confirmed; H1-26 print is the cap-removal event",
+    "stage": "ESA"
+  },
+  "HTRO": {
+    "p1": "C+",
+    "p2": "B-",
+    "p3": "C+ (upper)",
+    "p4": "C+",
+    "p5": "C+",
+    "p6": "B-",
+    "conviction": "C+ \u2014 strengthening; DC growth confirmed, moat question partially answered, M&A execution remains the constraint",
+    "stage": "ESA"
+  },
+  "NVTK": {
+    "p1": "B",
+    "p2": null,
+    "p3": "B",
+    "p4": "C",
+    "p5": "A",
+    "p6": "B",
+    "conviction": "C \u2014 forming; 2 anchor data points still open",
+    "stage": "DD"
+  }
+}

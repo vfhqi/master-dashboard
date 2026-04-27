@@ -1,0 +1,34 @@
+{
+  "_meta": {
+    "description": "Ticker crosswalk: universe ticker -> FactSet, yfinance, stock_mapping keys + canonical taxonomy",
+    "generated": "2026-04-23",
+    "notes": "BARC-GB manually added (not in stock_mapping_final.json). SAP sector is wrong in Notion (Computer games -> should be Enterprise Software). ENAV sector wrong (Telecoms MNO -> should be Transport Infrastructure). FEVR sector wrong (Capital goods EV -> should be Beverages). DKSH sector wrong (Chemicals -> should be Distribution). These use Notion values as-is; flag for Richard to fix."
+  },
+  "stocks": {
+    "AZA-SE":    {"fs": "AZA-SE",    "yf": "AZA.ST",    "sm": "AZA-SE",    "industry": "G. Financials", "sector": "G.5. Online savings platform (D2C)"},
+    "BYLOT-GR":  {"fs": "BYLOT-GR",  "yf": "BYLOT.AT",  "sm": "BYLOT-GR",  "industry": "H. Consumer discretionary", "sector": "H.7. Gambling - B2C - Lottery-led"},
+    "CARLB-DK":  {"fs": "CARL.B-DK", "yf": "CARL-B.CO", "sm": "CARL.B-DK", "industry": "A. Consumer staples", "sector": "A.1. Beverages - beer"},
+    "CVSG-GB":   {"fs": "CVSG-GB",   "yf": "CVSG.L",    "sm": "CVSG-GB",   "industry": "B. Healthcare", "sector": "B.2. Animal healthcare"},
+    "ENAV-IT":   {"fs": "ENAV-IT",   "yf": "ENAV.MI",   "sm": "ENAV-IT",   "industry": "C. Telecoms", "sector": "C.1. Telecoms - MNOs"},
+    "FEVR-GB":   {"fs": "FEVR-GB",   "yf": "FEVR.L",    "sm": "FEVR-GB",   "industry": "O. Industrials and capital goods", "sector": "O.10. Capital goods - EV"},
+    "HTWS-GB":   {"fs": "HTWS-GB",   "yf": "HTWS.L",    "sm": "HTWS-GB",   "industry": "C. Telecoms", "sector": "C.2. Telecoms - towers"},
+    "RYA-IE":    {"fs": "RYA-IE",    "yf": "RYA.IR",    "sm": "RYA-IE",    "industry": "H. Consumer discretionary", "sector": "H.11. Airlines and travel"},
+    "THEON-NL":  {"fs": "THEON-NL",  "yf": "THEON.AS",  "sm": "THEON-NL",  "industry": "F. Defence", "sector": "F.2. Defence - Non-primes"},
+    "DCC-GB":    {"fs": "DCC-GB",    "yf": "DCC.L",     "sm": "DCC-GB",    "industry": "P. Energy, commodities and metals mining", "sector": "P.1. Energy - downstream distribution"},
+    "CRBN-DK":   {"fs": "CRBN-NL",   "yf": "CRBN.CO",   "sm": "CRBN-NL",   "industry": "M. Materials", "sector": "M.1. Chemicals - Fragrances/ingredients"},
+    "FLTR-GB":   {"fs": "FLTR-GB",   "yf": "FLTR.L",    "sm": "FLTR-GB",   "industry": "H. Consumer discretionary", "sector": "H.6. Gambling - B2C OSB, Casino-led"},
+    "DKSH-CH":   {"fs": "DKSH-CH",   "yf": "DKSH.SW",   "sm": "DKSH-CH",   "industry": "M. Materials", "sector": "M.1. Chemicals - Fragrances/ingredients"},
+    "XVIVO-SE":  {"fs": "XVIVO-SE",  "yf": "XVIVO.ST",  "sm": "XVIVO-SE",  "industry": "B. Healthcare", "sector": "B.5. Medtech - consumables - mature"},
+    "PRY-GB":    {"fs": "PRY-IT",    "yf": "PRY.MI",    "sm": "PRY-IT",    "industry": "O. Industrials and capital goods", "sector": "O.4. Capital goods - grid"},
+    "NKT-SE":    {"fs": "NKT-DK",    "yf": "NKT.CO",    "sm": "NKT-DK",    "industry": "O. Industrials and capital goods", "sector": "O.4. Capital goods - grid"},
+    "NEX-FR":    {"fs": "NEX-FR",    "yf": "NEX.PA",    "sm": "NEX-FR",    "industry": "O. Industrials and capital goods", "sector": "O.4. Capital goods - grid"},
+    "VOD-GB":    {"fs": "VOD-GB",    "yf": "VOD.L",     "sm": "VOD-GB",    "industry": "C. Telecoms", "sector": "C.1. Telecoms - MNOs"},
+    "NSIS-SE":   {"fs": "NSIS.B-DK", "yf": "NSIS-B.ST", "sm": "NSIS.B-DK", "industry": "M. Materials", "sector": "M.1. Chemicals - Fragrances/ingredients"},
+    "HTRO-SE":   {"fs": "HTRO-SE",   "yf": "HTRO.ST",   "sm": "HTRO-SE",   "industry": "O. Industrials and capital goods", "sector": "O.4. Capital goods - grid"},
+    "BARC-GB":   {"fs": "BARC-GB",   "yf": "BARC.L",    "sm": null,        "industry": "G. Financials", "sector": "G.13. Banks"},
+    "UCB-BE":    {"fs": "UCB-BE",    "yf": "UCB.BR",    "sm": "UCB-BE",    "industry": "B. Healthcare", "sector": "B.7. Pharma/biotech"},
+    "SAP-DE":    {"fs": "SAP-DE",    "yf": "SAP.DE",    "sm": "SAP-DE",    "industry": "J. Technology", "sector": "J.7. Software - Computer games"},
+    "AI-FR":     {"fs": "AI-FR",     "yf": "AI.PA",     "sm": "AI-FR",     "industry": "M. Materials", "sector": "M.8. Chemicals - Gases"},
+    "SUBC-NO":   {"fs": "SUBC-NO",   "yf": "SUBC.OL",   "sm": "SUBC-NO",   "industry": "P. Energy, commodities and metals mining", "sector": "P.3. Energy - upstream support services"}
+  }
+}
