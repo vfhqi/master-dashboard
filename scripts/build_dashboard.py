@@ -174,25 +174,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .header-stats .stat-value{color:var(--text-bright);font-weight:600}
 /* FIX-1: Key + Chart pushed right */
 .header-right-btns{display:flex;gap:6px;margin-left:auto}
-.header-right-btns .ctrl-btn{background:var(--card);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-size:11px;padding:3px 10px;border-radius:4px;cursor:pointer;white-space:nowrap}
-.header-right-btns .ctrl-btn:hover{color:var(--text);border-color:#bbb}
+.header-right-btns .ctrl-btn{background:var(--card);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.header-right-btns .ctrl-btn:hover{color:var(--text-bright);border-color:#bbb;background:var(--card-hover)}
 /* FIX-5 Row 2: TABS label + tab nav */
 .header-tabs-row{display:flex;align-items:center;padding:0 16px 2px;gap:8px}
-.header-tabs-row .row-label{font-size:12px;font-weight:700;color:var(--text-bright);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.header-tabs-row .row-label{font-size:11px;font-weight:700;color:var(--text-bright);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
 .tab-nav{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-/* FIX-6: Tab buttons with colour edging */
-.tab-btn{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--tab-accent,#1b3d5c);color:var(--text-dim);font-family:var(--font);font-size:11px;font-weight:500;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
-.tab-btn:hover{background:var(--card-hover);color:var(--text)}
+/* FIX-6: Tab buttons — Group 1 colour: navy */
+.tab-btn{background:rgba(27,61,92,0.04);border:1px solid var(--border);border-left:3px solid var(--tab-accent,#1b3d5c);color:var(--text-dim);font-family:var(--font);font-size:11px;font-weight:500;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.tab-btn:hover{background:var(--card-hover);color:var(--text-bright);border-color:#bbb}
 .tab-btn.tab-active{background:var(--tab-accent,#1b3d5c);color:#fff;font-weight:600;border-left-color:var(--tab-accent,#1b3d5c)}
 /* FIX-5 Row 3: toggles label + controls */
 .header-controls-row{display:flex;gap:6px;padding:0 16px 4px;align-items:center;flex-wrap:wrap}
-.header-controls-row .row-label{font-size:12px;font-weight:700;color:var(--text-bright);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;min-width:80px}
-.header-controls-row .ctrl-btn{background:var(--card);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-size:11px;padding:3px 10px;border-radius:4px;cursor:pointer;white-space:nowrap}
-.header-controls-row .ctrl-btn:hover{color:var(--text);border-color:#bbb}
+.header-controls-row .row-label{font-size:11px;font-weight:700;color:var(--text-bright);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;min-width:80px}
+/* Group 3 colour: teal */
+.header-controls-row .ctrl-btn{background:rgba(0,128,128,0.04);border:1px solid var(--border);border-left:3px solid #5f9ea0;color:var(--text-dim);font-family:var(--font);font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.header-controls-row .ctrl-btn:hover{color:var(--text-bright);border-color:#bbb;background:var(--card-hover)}
 .header-controls-row .ctrl-btn.active{background:#1b3d5c;color:#fff;border-color:#1b3d5c}
-.header-controls-row .anchor-links{display:flex;gap:4px;margin-left:auto;align-items:center}
-.header-controls-row .anchor-link{color:var(--text-dim);font-size:11px;text-decoration:none;cursor:pointer;padding:3px 8px;border:1px solid var(--border);border-radius:4px;background:var(--card)}
-.header-controls-row .anchor-link:hover{color:var(--text-bright);border-color:#bbb;background:var(--card-hover)}
+/* Group 2 colour: warm brown */
+.anchor-links{display:flex;gap:4px;align-items:center}
+.anchor-link{color:var(--text-dim);font-size:11px;text-decoration:none;cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-left:3px solid #a08060;border-radius:4px;background:rgba(160,128,96,0.04);transition:background .15s,color .15s,border-color .15s}
+.anchor-link:hover{color:var(--text-bright);border-color:#bbb;background:var(--card-hover)}
 #header-tab-controls{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
 .main{margin-top:var(--header-height);padding:12px 16px}
 .tab-content{animation:fadeIn .2s ease}
@@ -206,15 +208,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .summary-stat .value{font-size:20px;font-weight:700;color:var(--text-bright)}
 .summary-stat .value.green{color:var(--green)}.summary-stat .value.red{color:var(--red)}.summary-stat .value.amber{color:var(--amber)}
 .score-filter,.group-toggles{display:flex;gap:4px;flex-wrap:wrap}
-.score-btn,.group-toggle{background:var(--card);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer}
-.score-btn:hover,.group-toggle:hover{border-color:#bbb;color:var(--text)}
+/* Group 4 colour: indigo */
+.score-btn,.group-toggle{background:rgba(75,0,130,0.04);border:1px solid var(--border);border-left:3px solid #7b68ae;color:var(--text-dim);font-family:var(--font);font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.score-btn:hover,.group-toggle:hover{border-color:#bbb;color:var(--text-bright);background:var(--card-hover)}
 .score-btn.active{background:#1b3d5c;color:#fff;border-color:#1b3d5c;font-weight:600}
 .group-toggle.active{background:#1b3d5c;color:#fff;border-color:#1b3d5c;font-weight:600}
 
 /* FIX-11: Fixed table layout, no horizontal scroll */
 .data-table-wrap{overflow-x:clip;border-radius:8px;border:1px solid var(--border)}
 table.data-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:auto}
-table.data-table th{background:#f0ede3;color:#6b6b6b;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:4px 4px;text-align:left;border-bottom:2px solid var(--border);position:sticky;top:0;z-index:5;cursor:pointer;white-space:nowrap;user-select:none;-webkit-user-select:none;overflow:hidden;text-overflow:ellipsis}
+table.data-table th{background:#f0ede3;color:#6b6b6b;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:4px 4px;text-align:left;border-bottom:2px solid var(--border);position:sticky;top:var(--header-height);z-index:5;cursor:pointer;white-space:nowrap;user-select:none;-webkit-user-select:none;overflow:hidden;text-overflow:ellipsis}
 table.data-table th:hover{color:var(--text)}
 table.data-table th .sort-arrow{margin-left:2px;opacity:.4}
 table.data-table th.sorted .sort-arrow{opacity:1;color:var(--amber)}
@@ -228,8 +231,8 @@ table.data-table th.col-txt{text-align:left}
 
 /* FIX-4: Group header row above column headers */
 /* FIX-SORT: Group header row sticks at top:0; column header row sticks below it at top:20px */
-table.data-table .group-header-row th{background:#f5f3ec;font-size:9px;font-weight:600;padding:2px 4px;text-align:center;border-bottom:1px solid var(--border);cursor:default;letter-spacing:.4px;z-index:6;top:0;pointer-events:none}
-table.data-table .col-header-row th{top:20px;z-index:8}
+table.data-table .group-header-row th{background:#f5f3ec;font-size:9px;font-weight:600;padding:2px 4px;text-align:center;border-bottom:1px solid var(--border);cursor:default;letter-spacing:.4px;z-index:6;top:var(--header-height);pointer-events:none}
+table.data-table .col-header-row th{top:calc(var(--header-height) + 20px);z-index:8}
 
 /* Column group borders */
 .grp-lt-first{border-left:2px solid rgba(200,50,50,0.25)}
@@ -336,6 +339,7 @@ table.data-table th{position:relative}
 
 /* FIX-2: Qualified Stocks heading */
 .qualified-title{font-size:14px;font-weight:600;color:var(--text-bright);margin:12px 0 8px;padding-left:4px}
+.section-label-row td{font-size:13px;font-weight:600;color:var(--text-bright);padding:10px 6px 4px;border-bottom:1px solid var(--border);background:#f7f5ef}
 
 /* UTR V2: Stage group borders (MM99 pattern) */
 .utr-e-first{border-left:2px solid rgba(200,170,0,0.30)}
@@ -348,9 +352,10 @@ th.utr-l-first,th.utr-l-last{border-top:2px solid rgba(230,100,0,0.30)}
 .utr-c-last{border-right:2px solid rgba(46,125,50,0.30)}
 th.utr-c-first,th.utr-c-last{border-top:2px solid rgba(46,125,50,0.30)}
 /* UTR key description row above headers */
-.utr-key-row td{font-size:9px;color:#8b8680;font-weight:400;font-style:italic;text-align:center;padding:1px 3px;white-space:normal;line-height:1.2;vertical-align:bottom;border-bottom:none;max-width:64px;overflow:hidden;text-overflow:ellipsis;position:sticky;top:0;z-index:5;background:#f7f5ef}
-.utr-key-row+.group-header-row th{top:22px}
-.utr-key-row+.group-header-row+.col-header-row th{top:42px}
+.utr-key-row td,.gen-key-row td{font-size:9px;color:#8b8680;font-weight:400;font-style:italic;text-align:center;padding:2px 4px;white-space:normal;line-height:1.2;vertical-align:bottom;border-bottom:none;max-width:80px;overflow:hidden;text-overflow:ellipsis;position:sticky;top:var(--header-height);z-index:5;background:#f7f5ef}
+.utr-key-row+.group-header-row th,.gen-key-row+.group-header-row th{top:calc(var(--header-height) + 22px)}
+.utr-key-row+.group-header-row+.col-header-row th,.gen-key-row+.group-header-row+.col-header-row th{top:calc(var(--header-height) + 42px)}
+.gen-key-row+.col-header-row th{top:calc(var(--header-height) + 22px)}
 /* UTR: hide inputs columns */
 .utr-inputs-hidden .col-input{display:none}
 /* UTR: Test MA colour coding */
@@ -537,14 +542,14 @@ window.switchTab=function(id){
       buildHeaderControls(id);
     }
   }
-  // FIX-5: update toggles label
+  // FIX-5: update toggles label — just "#4 Filters" (no tab name)
   var tl=document.getElementById("toggles-label");
-  if(tl){
-    for(var j=0;j<TAB_IDS.length;j++){if(TAB_IDS[j]===id){tl.textContent=TAB_LABELS[j]+" Filters";break}}
+  if(tl){tl.textContent="#4 Filters"}
+  // Re-apply key rows if KEY is active
+  if(keysVisible){
+    var kt=el?el.querySelectorAll("table.data-table"):[];
+    for(var ki=0;ki<kt.length;ki++)_buildKeyRow(kt[ki]);
   }
-  // Close key panel on tab switch
-  var kp=document.getElementById("key-panel");
-  if(kp)kp.classList.remove("open");
 };
 window.closeChart=function(){
   document.getElementById("chart-panel").classList.remove("open");
@@ -624,18 +629,32 @@ function loadChartData(ticker, callback){
   xhr.open("GET",url,true);
   xhr.onreadystatechange=function(){
     if(xhr.readyState!==4)return;
-    var cbs=_chartLoading[ticker]||[];
-    delete _chartLoading[ticker];
     if(xhr.status===200||(xhr.status===0&&xhr.responseText)){
       try{eval(xhr.responseText)}catch(e){}
+      var cbs=_chartLoading[ticker]||[];
+      delete _chartLoading[ticker];
+      var data=CHART_REGISTRY[ticker]?_expandChartRows(CHART_REGISTRY[ticker]):null;
+      for(var i=0;i<cbs.length;i++)cbs[i](data);
+    }else{
+      // XHR returned non-200 (e.g. 404) — fall back to script injection
+      var s2=document.createElement("script");
+      s2.src=url;
+      s2.onload=function(){
+        var cbs3=_chartLoading[ticker]||[];
+        delete _chartLoading[ticker];
+        var data3=CHART_REGISTRY[ticker]?_expandChartRows(CHART_REGISTRY[ticker]):null;
+        for(var i=0;i<cbs3.length;i++)cbs3[i](data3);
+      };
+      s2.onerror=function(){
+        var cbs3=_chartLoading[ticker]||[];
+        delete _chartLoading[ticker];
+        for(var i=0;i<cbs3.length;i++)cbs3[i](null);
+      };
+      document.head.appendChild(s2);
     }
-    var data=CHART_REGISTRY[ticker]?_expandChartRows(CHART_REGISTRY[ticker]):null;
-    for(var i=0;i<cbs.length;i++)cbs[i](data);
   };
   try{xhr.send()}catch(e){
-    // XHR blocked — fall back to script injection (works from http://)
-    delete _chartLoading[ticker];
-    _chartLoading[ticker]=[callback];
+    // XHR blocked entirely (file:// on some browsers) — fall back to script injection
     var s=document.createElement("script");
     s.src=url;
     s.onload=function(){
@@ -926,14 +945,53 @@ window.setChartZoom=function(z){
   if(chartTicker)openChart(chartTicker);
 };
 
-// Key: toggle floating tooltips near column headers
+// Key: toggle description rows built from .key-tip content in column headers
 var keysVisible=false;
+function _buildKeyRow(table){
+  var existing=table.querySelector("tr.gen-key-row");
+  if(existing)existing.parentNode.removeChild(existing);
+  // UTR already has its own permanent key row — skip
+  if(table.querySelector("tr.utr-key-row"))return;
+  // Skip tables with no key-tip content (e.g. portfolio summary tables)
+  if(!table.querySelector("thead .key-tip"))return;
+  var colRow=table.querySelector("tr.col-header-row");
+  if(!colRow){
+    // Fallback: use last row in thead
+    var allRows=table.querySelectorAll("thead tr");
+    if(allRows.length>0)colRow=allRows[allRows.length-1];
+  }
+  if(!colRow)return;
+  var ths=colRow.querySelectorAll("th");
+  var kr=document.createElement("tr");
+  kr.className="gen-key-row";
+  for(var i=0;i<ths.length;i++){
+    var td=document.createElement("td");
+    var tip=ths[i].querySelector(".key-tip");
+    if(tip&&tip.textContent){
+      td.textContent=tip.textContent;
+    }
+    // Copy col-span from th if present
+    var cs=ths[i].getAttribute("colspan");
+    if(cs)td.setAttribute("colspan",cs);
+    // Copy visibility classes for toggle columns
+    td.className=ths[i].className.replace(/\bcol-header\b/g,"");
+    kr.appendChild(td);
+  }
+  var thead=table.querySelector("thead");
+  if(thead&&thead.firstChild)thead.insertBefore(kr,thead.firstChild);
+  else if(thead)thead.appendChild(kr);
+}
+function _removeKeyRows(){
+  var rows=document.querySelectorAll("tr.gen-key-row");
+  for(var j=0;j<rows.length;j++)rows[j].parentNode.removeChild(rows[j]);
+}
 window.openKey=function(){
   keysVisible=!keysVisible;
-  var tables=document.querySelectorAll("table.data-table");
-  for(var j=0;j<tables.length;j++){
-    if(keysVisible)tables[j].classList.add("show-keys");
-    else tables[j].classList.remove("show-keys");
+  if(keysVisible){
+    var tables=document.querySelectorAll("table.data-table");
+    for(var j=0;j<tables.length;j++)_buildKeyRow(tables[j]);
+  }else{
+    _removeKeyRows();
   }
   var btn=document.querySelector("[onclick*='openKey']");
   if(btn){
@@ -941,12 +999,16 @@ window.openKey=function(){
     else{btn.textContent="Key";btn.classList.remove("active")}
   }
 };
-window.closeKey=function(){keysVisible=false;var t=document.querySelectorAll("table.data-table");for(var j=0;j<t.length;j++)t[j].classList.remove("show-keys")};
+window.closeKey=function(){keysVisible=false;_removeKeyRows()};
 
 window.toggleDisplayMode=function(){var cc=document.querySelectorAll(".tab-content");for(var ci=0;ci<cc.length;ci++)cc[ci].setAttribute("data-stale","1");
   displayMode=(displayMode==="ticker")?"company":"ticker";
   var btn=document.getElementById("btn-display-mode");
-  if(btn)btn.textContent=(displayMode==="ticker")?"Ticker":"Company";
+  if(btn){
+    btn.textContent=(displayMode==="ticker")?"Ticker":"Company";
+    if(displayMode==="company")btn.classList.add("active");
+    else btn.classList.remove("active");
+  }
   var main=document.querySelector(".main");
   if(main){
     if(displayMode==="company")main.classList.add("company-mode");
@@ -1365,9 +1427,9 @@ function buildPortfolioTile(tabId){
 // FIX-9: alignment classes
 // FIX-S4-COLW-V4: table-layout:auto — browser sizes columns by content
 function commonCols(){
-  var tkrW=displayMode==="company"?"width:180px":"width:120px";
+  var tkrW=displayMode==="company"?"width:140px;max-width:180px":"width:90px";
   return th("Ticker","_display_name","col-txt col-identity","Stock ticker or company name (toggle in header)",tkrW)
-    +th("Sector","_tax_sector","col-txt col-identity","Industry sector classification","width:200px")
+    +th("Sector","_tax_sector","col-txt col-identity","Industry sector classification","width:200px;max-width:200px")
     +th("Price","price","col-num col-price","Current stock price","width:52px")
     +th("52WH","high_52w","col-num col-price","52-week high (toggle to %)","width:52px")
     +th("52WL","low_52w","col-num col-price","52-week low (toggle to %)","width:52px")
@@ -1379,9 +1441,9 @@ function commonCols(){
 }
 // UTR-specific common cols: Ticker+Sector always visible, rest have col-input class
 function utrCommonCols(){
-  var tkrW=displayMode==="company"?"width:180px":"width:120px";
+  var tkrW=displayMode==="company"?"width:140px;max-width:180px":"width:90px";
   return th("Ticker","_display_name","col-txt col-identity","Stock ticker or company name",tkrW)
-    +th("Sector","_tax_sector","col-txt col-identity col-input","Sector","width:200px")
+    +th("Sector","_tax_sector","col-txt col-identity col-input","Sector","width:200px;max-width:200px")
     +th("Price","price","col-num col-price col-input","Price","width:52px")
     +th("52WH","high_52w","col-num col-price col-input","52-week high","width:52px")
     +th("52WL","low_52w","col-num col-price col-input","52-week low","width:52px")
@@ -1449,8 +1511,9 @@ function commonTds(r){
     ma150td='<td class="col-num col-price">'+fp(ma150)+'</td>';
     ma200td='<td class="col-num col-price">'+fp(ma200)+'</td>';
   }
-  return'<td class="col-txt col-identity" style="font-weight:600;color:var(--text-bright);min-width:90px;white-space:nowrap">'+dn+'</td>'
-    +'<td class="col-txt col-identity" style="font-size:11px;min-width:140px;white-space:nowrap">'+tax.sector+'</td>'
+  var mxW=displayMode==="company"?"max-width:180px;overflow:hidden;text-overflow:ellipsis;":"";
+  return'<td class="col-txt col-identity" style="font-weight:600;color:var(--text-bright);white-space:nowrap;'+mxW+'" title="'+dn+'">'+dn+'</td>'
+    +'<td class="col-txt col-identity" style="font-size:11px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis" title="'+tax.sector+'">'+tax.sector+'</td>'
     +'<td class="col-num col-price">'+fp(r.price)+'</td>'
     +h52val+l52val
     +ma20td+ma50td+ma150td+ma200td
@@ -1714,7 +1777,7 @@ function renderMM99(){
     return'<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+commonTds(r)
       +'<td class="col-num col-filter">'+testPips([r.t1,r.t2,r.t3,r.t4,r.t5,r.t6,r.t7,r.t8,r.t9,r.t10,r.t11])+' <span style="margin-left:4px;font-weight:600">'+r.mm99_score+'/11</span></td>'
       +'<td class="col-num col-filter">'+monthsPips(r.mm99_monthly,r.mm99_months_passing)+'</td>'
-      +testCell(r.t1,r.t1_pct,"col-filter grp-lt-first")+'<td class="col-num col-filter grp-lt-last '+(r.ma200_months>=6?"pass":r.ma200_months>=3?"amber":r.ma200_months>=1?"":"fail")+'" style="font-weight:600">'+(r.ma200_months!=null?r.ma200_months+"/12":"&mdash;")+'</td>'
+      +testCell(r.t1,r.t1_pct,"col-filter grp-lt-first")+'<td class="col-num col-filter grp-lt-last '+(r.ma200_months>=6?"pass":r.ma200_months>=3?"amber":r.ma200_months>=1?"":"fail")+'">'+(r.ma200_months!=null?r.ma200_months+"/12":"&mdash;")+'</td>'
       +testCell(r.t3,r.t3_pct,"col-filter grp-mt-first")+testCell(r.t4,r.t4_pct,"col-filter grp-mt-last")
       +testCell(r.t5,r.t5_pct,"col-filter grp-st-first")+testCell(r.t6,r.t6_pct,"col-filter grp-st-last")
       +testCell(r.t7,r.t7_pct,"col-filter grp-lead-first")+testCell(r.t8,r.t8_pct,"col-filter grp-lead-last")
@@ -1723,18 +1786,17 @@ function renderMM99(){
       +ratingsColTds(r)+'</tr>';
   }
 
-  // Live Portfolio tile — ALL position stocks (not filtered by tab criteria)
+  // Live Portfolio + Qualified Stocks in ONE table for column alignment
   var posRows=applyIndSecFilter(filterToPositions(allRows));
-  if(posRows.length>0){
-    h+='<h3 class="qualified-title" id="section-portfolio">Live Portfolio ('+posRows.length+')</h3>';
-    h+='<div class="data-table-wrap" style="margin-bottom:12px"><table class="data-table"><thead>'+mm99Headers()+'</thead><tbody>';
-    for(var pj=0;pj<posRows.length;pj++)h+=mm99Row(posRows[pj]);
-    h+='</tbody></table></div>';
-  }
-
   rows=applyIndSecFilter(rows);
-  h+='<h3 class="qualified-title" id="section-stocks">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</h3>';
-  h+='<div class="data-table-wrap"><table class="data-table"><thead>'+mm99Headers()+'</thead><tbody>';
+  var colCount=document.createElement("div");colCount.innerHTML=mm99Headers();var nCols=0;var lastRow=colCount.querySelector("tr:last-child");if(lastRow)nCols=lastRow.querySelectorAll("th").length;if(!nCols)nCols=33;
+  h+='<div class="data-table-wrap"><table class="data-table"><thead>'+mm99Headers()+'</thead>';
+  if(posRows.length>0){
+    h+='<tbody><tr class="section-label-row" id="section-portfolio"><td colspan="'+nCols+'">Live Portfolio ('+posRows.length+')</td></tr>';
+    for(var pj=0;pj<posRows.length;pj++)h+=mm99Row(posRows[pj]);
+    h+='</tbody>';
+  }
+  h+='<tbody><tr class="section-label-row" id="section-stocks"><td colspan="'+nCols+'">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</td></tr>';
   for(var j=0;j<rows.length;j++)h+=mm99Row(rows[j]);
   h+='</tbody></table></div>';
   h+=buildQualTilesV2(applyIndSecFilter(allRows),[
@@ -2563,28 +2625,29 @@ renderTab("mm99");
         '      <button class="ctrl-btn" onclick="openChart(\'Overview\')">Chart</button>\n'
         '    </div>\n'
         '  </div>\n'
-        '  <!-- FIX-5 Row 2: TABS label + tab navigation -->\n'
+        '  <!-- Row 2: #1 TABS (left) + #2 JUMP TO (right) -->\n'
         '  <div class="header-tabs-row">\n'
-        '    <span class="row-label">Tabs</span>\n'
+        '    <span class="row-label">#1 Tabs</span>\n'
         '    <div class="tab-nav">' + tab_buttons + '</div>\n'
-        '  </div>\n'
-        '  <!-- Row 3: Toggles + Filters -->\n'
-        '  <div class="header-controls-row">\n'
-        '    <span class="row-label">Toggles</span>\n'
-        '    <button class="ctrl-btn" id="btn-display-mode" onclick="toggleDisplayMode()">Ticker</button>\n'
-        '    <button class="ctrl-btn" id="btn-value-mode" onclick="toggleValueMode()">&#10003;&#10007;</button>\n'
-        '    <button class="ctrl-btn" id="btn-ratings" onclick="toggleRatings()">Show case ratings</button><span id="indsec-pills"></span>\n'
-        '    <span style="border-left:1px solid var(--border);height:20px;margin:0 8px"></span>\n'
-        '    <span class="row-label" id="toggles-label">MM 99 Filters</span>\n'
-        '    <div id="header-tab-controls"></div>\n'
-        '    <div class="anchor-links">\n'
-        '      <span class="row-label" style="font-size:10px;margin-right:4px">Jump to</span>\n'
+        '    <div class="anchor-links" style="margin-left:auto">\n'
+        '      <span class="row-label" style="margin-right:4px">#2 Jump to</span>\n'
         '      <a class="anchor-link" onclick="scrollToSection(\'section-summary\')">Summary</a>\n'
         '      <a class="anchor-link" onclick="scrollToSection(\'section-industries\')">Industries</a>\n'
         '      <a class="anchor-link" onclick="scrollToSection(\'section-sectors\')">Sectors</a>\n'
         '      <a class="anchor-link" onclick="scrollToSection(\'section-portfolio\')">Live Portfolio</a>\n'
         '      <a class="anchor-link" onclick="scrollToSection(\'section-stocks\')">Qualified Stocks</a>\n'
         '      <span id="group-links"></span>\n'
+        '    </div>\n'
+        '  </div>\n'
+        '  <!-- Row 3: #3 TOGGLES (left) + #4 FILTERS (right) -->\n'
+        '  <div class="header-controls-row">\n'
+        '    <span class="row-label">#3 Toggles</span>\n'
+        '    <button class="ctrl-btn" id="btn-display-mode" onclick="toggleDisplayMode()">Ticker</button>\n'
+        '    <button class="ctrl-btn" id="btn-value-mode" onclick="toggleValueMode()">&#10003;&#10007;</button>\n'
+        '    <button class="ctrl-btn" id="btn-ratings" onclick="toggleRatings()">Show case ratings</button><span id="indsec-pills"></span>\n'
+        '    <div style="margin-left:auto;display:flex;align-items:center;gap:6px">\n'
+        '      <span class="row-label" id="toggles-label">#4 Filters</span>\n'
+        '      <div id="header-tab-controls"></div>\n'
         '    </div>\n'
         '  </div>\n'
         '</div>\n'
