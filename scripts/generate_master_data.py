@@ -449,6 +449,83 @@ def build_prices_json(universe, raw_data, benchmark_rows):
         bp_duration["tight"] = tight_pct >= bp_threshold
         bp_duration["tight_pct"] = round(tight_pct, 3)
 
+        # ── MM99 Monthly History (T1-T8, 28-Apr-26) ────────────────
+        # At each of the last 12 calendar month-ends, reconstruct all 8
+        # Minervini technical tests and record whether ALL 8 passed.
+        # Result: list of 12 booleans, oldest first.
+        mm99_monthly_history = []
+        if len(rows_with_sma) >= 252:
+            # Build a date-indexed lookup from rows_with_sma for fast access
+            # Each row has row["date"] as a string "YYYY-MM-DD"
+            row_dates = [r["date"] for r in rows_with_sma]
+
+            # Determine the 12 calendar month-ends preceding the latest date
+            latest_date = datetime.strptime(row_dates[-1], "%Y-%m-%d").date()
+            month_end_dates = []
+            # Walk backwards from the month before the latest date's month
+            d = latest_date.replace(day=1) - timedelta(days=1)  # last day of prior month
+            for _ in range(12):
+                month_end_dates.append(d)
+                d = d.replace(day=1) - timedelta(days=1)  # last day of month before
+            month_end_dates.reverse()  # oldest first
+
+            for me_date in month_end_dates:
+                # Find the nearest trading day on or before this month-end
+                me_str = me_date.strftime("%Y-%m-%d")
+                # Binary search: find last row with date <= me_str
+                best_idx = None
+                for scan_i in range(len(row_dates) - 1, -1, -1):
+                    if row_dates[scan_i] <= me_str:
+                        best_idx = scan_i
+                        break
+
+                if best_idx is None or best_idx < 252:
+                    # Not enough history at this month-end to compute 52W stats
+                    mm99_monthly_history.append(False)
+                    continue
+
+                snap = rows_with_sma[best_idx]
+                snap_p = snap["close"]
+                snap_200 = snap.get("sma_200")
+                snap_150 = snap.get("sma_150")
+                snap_50 = snap.get("sma_50")
+
+                if snap_200 is None or snap_150 is None or snap_50 is None:
+                    mm99_monthly_history.append(False)
+                    continue
+
+                # T1: Price > 200D MA
+                h_t1 = snap_p > snap_200
+                # T2: 200D MA rising (compare to prior month's nearest row)
+                # Use row ~21 trading days earlier
+                prev_200_idx = max(0, best_idx - 21)
+                prev_200_val = rows_with_sma[prev_200_idx].get("sma_200")
+                h_t2 = (prev_200_val is not None and snap_200 > prev_200_val)
+                # T3: Price > 150D MA
+                h_t3 = snap_p > snap_150
+                # T4: 150D > 200D
+                h_t4 = snap_150 > snap_200
+                # T5: 50D > 150D
+                h_t5 = snap_50 > snap_150
+                # T6: Price > 50D MA
+                h_t6 = snap_p > snap_50
+                # T7: Price > 52W Low * 1.20 (at that point in time)
+                lookback_52w = rows_with_sma[max(0, best_idx - 252):best_idx + 1]
+                h_h52 = max(r["high"] for r in lookback_52w)
+                h_l52 = min(r["low"] for r in lookback_52w)
+                h_t7 = (h_l52 > 0 and snap_p > h_l52 * 1.20)
+                # T8: Price within 25% of 52W High
+                h_t8 = (h_h52 > 0 and snap_p >= h_h52 * 0.75)
+
+                all_pass = all([h_t1, h_t2, h_t3, h_t4, h_t5, h_t6, h_t7, h_t8])
+                mm99_monthly_history.append(all_pass)
+        else:
+            mm99_monthly_history = [False] * 12
+
+        # Pad to exactly 12 if we got fewer month-ends
+        while len(mm99_monthly_history) < 12:
+            mm99_monthly_history.insert(0, False)
+
         # ── UTR pre-computed metrics (S3-S7, 27-Apr-26) ─────────────
         # These feed into compute_all_filters for Uptrend Retest signals.
         # Pattern follows BP duration: compute from daily rows here, pass as summary fields.
@@ -599,6 +676,7 @@ def build_prices_json(universe, raw_data, benchmark_rows):
             "mas": mas,
             "ma200_months_rising": ma200_months_rising,
             "ma200_month_detail": ma200_month_detail,
+            "mm99_monthly_history": mm99_monthly_history,
             "bp_duration": bp_duration,
             "high_52w": round(high_52w, 4),
             "swing_high": round(swing_high, 4),
@@ -849,6 +927,11 @@ def compute_all_filters(prices):
         # Full 11-test score
         mm_11 = mm_8pt + sum(1 for t in [mm_t9, mm_t10, mm_t11] if t)
         mm["score_11"] = mm_11
+
+        # Monthly history: how many of last 12 months passed all 8 technical tests
+        mm_hist = stock.get("mm99_monthly_history", [False] * 12)
+        mm["monthly_history"] = mm_hist
+        mm["months_passing"] = sum(1 for m in mm_hist if m)
 
         # MM99 qualification
         if mm_8pt >= 8 and mm["group_e"]["pass"]:

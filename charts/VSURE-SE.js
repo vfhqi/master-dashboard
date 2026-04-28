@@ -1,1 +1,1 @@
-var CHART_REGISTRY=CHART_REGISTRY||{};CHART_REGISTRY["VSURE-SE"]=[["2026-04-27",11.54,11.56,10.81,10.88,1185085,null,null,null,null,null,null,null]];
+var CHART_REGISTRY=CHART_REGISTRY||{};CHART_REGISTRY["VSURE-SE"]=[["2026-04-28",11.0,11.0,10.15,10.22,1111069,null,null,null,null,null,null,null]];

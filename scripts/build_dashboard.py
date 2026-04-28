@@ -1017,6 +1017,7 @@ function badge(s){if(!s)return'<span class="badge badge-fail">&mdash;</span>';if
 function scorePips(s,m){var h='<div class="score-bar">';for(var j=0;j<m;j++)h+='<div class="pip '+(j<s?'pip-on':'pip-off')+'"></div>';return h+'</div>'}
 // Score pips mapped to individual test results (each pip = one test)
 function testPips(tests){var h='<div class="score-bar">';for(var j=0;j<tests.length;j++)h+='<div class="pip '+(tests[j]?'pip-on':'pip-off')+'"></div>';return h+'</div>'}
+function monthsPips(hist,count){var h='<div class="score-bar">';for(var j=0;j<hist.length;j++)h+='<div class="pip '+(hist[j]?'pip-on':'pip-off')+'"></div>';return h+' <span style="margin-left:4px;font-weight:600">'+count+'/12</span></div>'}
 function signalBar(sigs){var h='<div class="signal-bar">';for(var j=0;j<sigs.length;j++){var c=sigs[j]==="pass"?"seg-pass":sigs[j]==="amber"?"seg-amber":"seg-fail";h+='<div class="seg '+c+'"></div>'}return h+'</div>'}
 
 function addCommas(s){var p=s.split(".");var i=p[0];var d=p.length>1?"."+p[1]:"";var r="";var c=0;for(var j=i.length-1;j>=0;j--){if(c>0&&c%3===0)r=","+r;r=i.charAt(j)+r;c++}return r+d}
@@ -1627,7 +1628,7 @@ function renderMM99(){
   // FIX-7: Enrich ALL rows with MM99 test data first (for Live Portfolio tile)
   for(var j=0;j<allRows.length;j++){
     var r=allRows[j],mm=r.f.mm99;
-    if(!mm||!mm.group_a){r.mm99_score=0;r.stage="";r.t1=false;r.t2=false;r.t3=false;r.t4=false;r.t5=false;r.t6=false;r.t7=false;r.t8=false;r.t9=false;r.t10=false;r.t11=false;r.ga=false;r.gb=false;r.gc=false;r.gd=false;r.ge=false;r.pb_stage=r.f.probing_bet?r.f.probing_bet.stage:"";r.bp_stage=r.f.basing_plateau?r.f.basing_plateau.stage:"";r.t1_pct=null;r.t2_pct=null;r.t3_pct=null;r.t4_pct=null;r.t5_pct=null;r.t6_pct=null;r.t7_pct=null;r.t8_pct=null;r.ma200_months=null;continue;}
+    if(!mm||!mm.group_a){r.mm99_score=0;r.stage="";r.t1=false;r.t2=false;r.t3=false;r.t4=false;r.t5=false;r.t6=false;r.t7=false;r.t8=false;r.t9=false;r.t10=false;r.t11=false;r.ga=false;r.gb=false;r.gc=false;r.gd=false;r.ge=false;r.pb_stage=r.f.probing_bet?r.f.probing_bet.stage:"";r.bp_stage=r.f.basing_plateau?r.f.basing_plateau.stage:"";r.t1_pct=null;r.t2_pct=null;r.t3_pct=null;r.t4_pct=null;r.t5_pct=null;r.t6_pct=null;r.t7_pct=null;r.t8_pct=null;r.ma200_months=null;r.mm99_monthly=[];r.mm99_months_passing=0;continue;}
     r.mm99_score=mm.score_11;r.stage=mm.stage;
     r.t1=mm.group_a.tests.T1;r.t2=mm.group_a.tests.T2;r.t3=mm.group_b.tests.T3;r.t4=mm.group_b.tests.T4;
     r.t5=mm.group_c.tests.T5;r.t6=mm.group_c.tests.T6;r.t7=mm.group_d.tests.T7;r.t8=mm.group_d.tests.T8;
@@ -1650,6 +1651,8 @@ function renderMM99(){
     r.t9_pct=rse.rs_excess_sector!=null?rse.rs_excess_sector:null;
     r.t10_pct=rse.rs_excess_industry!=null?rse.rs_excess_industry:null;
     r.t11_pct=rse.rs_excess_market!=null?rse.rs_excess_market:null;
+    r.mm99_monthly=mm.monthly_history||[];
+    r.mm99_months_passing=mm.months_passing!=null?mm.months_passing:0;
   }
   // FIX-7: Now filter into rows by score + group toggles (AFTER enrichment)
   var rows=[];
@@ -1686,7 +1689,7 @@ function renderMM99(){
   function mm99Headers(){
     var hdr='<tr class="group-header-row">';
     // FIX-S4-MM99: RS in Inputs group, PB+BP as Setups
-    hdr+='<th colspan="2"></th><th colspan="8" style="background:rgba(100,100,100,0.06)">Inputs</th><th></th>';
+    hdr+='<th colspan="2"></th><th colspan="8" style="background:rgba(100,100,100,0.06)">Inputs</th><th colspan="2"></th>';
     hdr+='<th colspan="2" style="background:rgba(200,50,50,0.08)">Long-term</th>';
     hdr+='<th colspan="2" style="background:rgba(200,150,0,0.08)">Mid-term</th>';
     hdr+='<th colspan="2" style="background:rgba(50,150,50,0.08)">Short-term</th>';
@@ -1696,6 +1699,7 @@ function renderMM99(){
     hdr+=ratingsColHeaders().length>0?'<th colspan="8" class="col-ratings">Ratings</th>':"";
     hdr+='</tr><tr class="col-header-row">';
     hdr+=commonCols()+th("Score","mm99_score","col-num col-filter","Minervini 11-test score (8 technical + 3 RS)")
+      +th("L12M","mm99_months_passing","col-num col-filter","Months passing all 8 technical tests (last 12 calendar months)")
       +th("P>200D","t1_pct","col-filter grp-lt-first","Price above 200-day MA")+th("200D Up","ma200_months","col-filter grp-lt-last","200-day MA months rising (of 12)")
       +th("P>150D","t3_pct","col-filter grp-mt-first","Price above 150-day MA")+th("150>200","t4_pct","col-filter grp-mt-last","150-day MA above 200-day MA")
       +th("50>150","t5_pct","col-filter grp-st-first","50-day MA above 150-day MA")+th("P>50D","t6_pct","col-filter grp-st-last","Price above 50-day MA")
@@ -1709,6 +1713,7 @@ function renderMM99(){
   function mm99Row(r){
     return'<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+commonTds(r)
       +'<td class="col-num col-filter">'+testPips([r.t1,r.t2,r.t3,r.t4,r.t5,r.t6,r.t7,r.t8,r.t9,r.t10,r.t11])+' <span style="margin-left:4px;font-weight:600">'+r.mm99_score+'/11</span></td>'
+      +'<td class="col-num col-filter">'+monthsPips(r.mm99_monthly,r.mm99_months_passing)+'</td>'
       +testCell(r.t1,r.t1_pct,"col-filter grp-lt-first")+'<td class="col-num col-filter grp-lt-last '+(r.ma200_months>=6?"pass":r.ma200_months>=3?"amber":r.ma200_months>=1?"":"fail")+'" style="font-weight:600">'+(r.ma200_months!=null?r.ma200_months+"/12":"&mdash;")+'</td>'
       +testCell(r.t3,r.t3_pct,"col-filter grp-mt-first")+testCell(r.t4,r.t4_pct,"col-filter grp-mt-last")
       +testCell(r.t5,r.t5_pct,"col-filter grp-st-first")+testCell(r.t6,r.t6_pct,"col-filter grp-st-last")
