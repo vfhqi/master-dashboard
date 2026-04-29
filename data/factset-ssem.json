@@ -1002,5 +1002,165 @@
       "sales_current": 70690.04,
       "tp_current": 283.59412
     }
+  },
+  "IGG-GB": {
+    "eps_rev": {
+      "L1M": 3,
+      "L3M": 1,
+      "L6M": 6,
+      "L12M": -4
+    },
+    "ebitda_rev": {
+      "L1M": 0,
+      "L3M": -3,
+      "L6M": 8,
+      "L12M": null
+    },
+    "sales_rev": {
+      "L1M": 0,
+      "L3M": 0,
+      "L6M": 5,
+      "L12M": null
+    },
+    "tp_rev": {
+      "L1M": 3,
+      "L3M": 17,
+      "L6M": 22,
+      "L12M": null
+    },
+    "buy_rev": {
+      "L1M": -8,
+      "L3M": 17,
+      "L6M": 4,
+      "L12M": null
+    },
+    "buy_pct": 67,
+    "momentum": 9,
+    "raw": {
+      "eps_current": 1.3677304,
+      "ebitda_current": 588.7476,
+      "sales_current": 1269.5579,
+      "tp_current": 15.828889
+    }
+  },
+  "EKTA-SE": {
+    "eps_rev": {
+      "L1M": -4,
+      "L3M": -5,
+      "L6M": 0,
+      "L12M": -19
+    },
+    "ebitda_rev": {
+      "L1M": -2,
+      "L3M": -3,
+      "L6M": 0,
+      "L12M": -18
+    },
+    "sales_rev": {
+      "L1M": 0,
+      "L3M": -3,
+      "L6M": -5,
+      "L12M": -17
+    },
+    "tp_rev": {
+      "L1M": 0,
+      "L3M": 6,
+      "L6M": 15,
+      "L12M": null
+    },
+    "buy_rev": {
+      "L1M": 4,
+      "L3M": 4,
+      "L6M": 18,
+      "L12M": null
+    },
+    "buy_pct": 47,
+    "momentum": 0,
+    "raw": {
+      "eps_current": 4.47067,
+      "ebitda_current": 3807.2207,
+      "sales_current": 18429.225,
+      "tp_current": 62.0
+    }
+  },
+  "GET-SE": {
+    "eps_rev": {
+      "L1M": -2,
+      "L3M": -7,
+      "L6M": -9,
+      "L12M": -9
+    },
+    "ebitda_rev": {
+      "L1M": -1,
+      "L3M": -6,
+      "L6M": -7,
+      "L12M": -9
+    },
+    "sales_rev": {
+      "L1M": 0,
+      "L3M": -3,
+      "L6M": -5,
+      "L12M": -6
+    },
+    "tp_rev": {
+      "L1M": -2,
+      "L3M": -6,
+      "L6M": -6,
+      "L12M": null
+    },
+    "buy_rev": {
+      "L1M": -8,
+      "L3M": 0,
+      "L6M": 0,
+      "L12M": null
+    },
+    "buy_pct": 42,
+    "momentum": -13,
+    "raw": {
+      "eps_current": 13.037027,
+      "ebitda_current": 7337.091,
+      "sales_current": 36529.19,
+      "tp_current": 224.54546
+    }
+  },
+  "DIE-BE": {
+    "eps_rev": {
+      "L1M": -2,
+      "L3M": -2,
+      "L6M": -8,
+      "L12M": -8
+    },
+    "ebitda_rev": {
+      "L1M": 0,
+      "L3M": -2,
+      "L6M": 3,
+      "L12M": 0
+    },
+    "sales_rev": {
+      "L1M": 0,
+      "L3M": -1,
+      "L6M": 1,
+      "L12M": -44
+    },
+    "tp_rev": {
+      "L1M": -2,
+      "L3M": 7,
+      "L6M": 9,
+      "L12M": null
+    },
+    "buy_rev": {
+      "L1M": -8,
+      "L3M": -8,
+      "L6M": 12,
+      "L12M": null
+    },
+    "buy_pct": 82,
+    "momentum": -5,
+    "raw": {
+      "eps_current": 15.84718,
+      "ebitda_current": 723.5916,
+      "sales_current": 8435.777,
+      "tp_current": 232.63637
+    }
   }
 }

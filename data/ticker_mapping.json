@@ -29,6 +29,10 @@
     "UCB-BE":    {"fs": "UCB-BE",    "yf": "UCB.BR",    "sm": "UCB-BE",    "industry": "B. Healthcare", "sector": "B.7. Pharma/biotech"},
     "SAP-DE":    {"fs": "SAP-DE",    "yf": "SAP.DE",    "sm": "SAP-DE",    "industry": "J. Technology", "sector": "J.7. Software - Computer games"},
     "AI-FR":     {"fs": "AI-FR",     "yf": "AI.PA",     "sm": "AI-FR",     "industry": "M. Materials", "sector": "M.8. Chemicals - Gases"},
-    "SUBC-NO":   {"fs": "SUBC-NO",   "yf": "SUBC.OL",   "sm": "SUBC-NO",   "industry": "P. Energy, commodities and metals mining", "sector": "P.3. Energy - upstream support services"}
+    "SUBC-NO":   {"fs": "SUBC-NO",   "yf": "SUBC.OL",   "sm": "SUBC-NO",   "industry": "P. Energy, commodities and metals mining", "sector": "P.3. Energy - upstream support services"},
+    "IGG-GB":    {"fs": "IGG-GB",    "yf": "IGG.L",     "sm": "IGG-GB",    "industry": "J. Technology", "sector": "J.7. Software - Computer games"},
+    "EKTA-SE":   {"fs": "EKTA.B-SE", "yf": "EKTA-B.ST", "sm": "EKTA.B-SE", "industry": "O. Industrials and capital goods", "sector": "O.8. Capital goods - Security/surveillance"},
+    "GET-SE":    {"fs": "GETI.B-SE", "yf": "GETI-B.ST", "sm": "GETI.B-SE", "industry": "B. Healthcare", "sector": "B.5. Medtech - consumables - mature"},
+    "DIE-BE":    {"fs": "DIE-BE",    "yf": "DIE.BR",    "sm": "DIE-BE",    "industry": "H. Consumer discretionary", "sector": "H.9. Auto distribution / Belron"}
   }
 }
