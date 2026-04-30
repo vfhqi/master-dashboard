@@ -110,7 +110,7 @@ TABS = [
     {"id": "tech",      "label": "Technical Data",   "accent": "#2c5282"},
     {"id": "ssem",      "label": "SSEM",             "accent": "#2b6cb0"},
     {"id": "val",       "label": "Valuation",        "accent": "#38a169"},
-    {"id": "combos",    "label": "Combinations",     "accent": "#dd6b20"},
+    {"id": "combos",    "label": "TIMELINESS",       "accent": "#dd6b20"},
     {"id": "positions", "label": "Live Investments",  "accent": "#319795"},
 ]
 
@@ -136,10 +136,12 @@ def build_html(data_js):
         if t["id"] not in TECHNICAL_TABS and t["id"] == "tech":
             tab_buttons += '</div><div class="tab-group" style="border:1.5px solid rgba(120,80,200,0.25);border-radius:6px;padding:2px 4px;display:inline-flex;gap:2px;margin-left:6px">'
         active = ' tab-active' if t["id"] == "mm99" else ''
+        # SESSION 9 Pass 1.1: TIMELINESS gets emphasis treatment (uppercase + bold)
+        emphasis = ' tab-emphasis' if t["id"] == "combos" else ''
         bg_tint = hex_to_rgba(t["accent"], 0.1)
         border_tint = hex_to_rgba(t["accent"], 0.3)
         tab_buttons += (
-            '<button class="tab-btn' + active + '" data-tab="' + t["id"] + '" '
+            '<button class="tab-btn' + active + emphasis + '" data-tab="' + t["id"] + '" '
             'style="--tab-accent:' + t["accent"] + ';background:' + bg_tint + ';border-color:' + border_tint + '" '
             'onclick="switchTab(\'' + t["id"] + '\')">' + t["label"] + '</button>'
         )
@@ -184,6 +186,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .tab-btn{background:rgba(27,61,92,0.04);border:1px solid var(--border);border-left:3px solid var(--tab-accent,#1b3d5c);color:var(--text-dim);font-family:var(--font);font-size:11px;font-weight:500;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
 .tab-btn:hover{background:var(--card-hover);color:var(--text-bright);border-color:#bbb}
 .tab-btn.tab-active{background:var(--tab-accent,#1b3d5c);color:#fff;font-weight:600;border-left-color:var(--tab-accent,#1b3d5c)}
+.tab-btn.tab-emphasis{font-weight:700;letter-spacing:.6px;border-width:2px;text-transform:uppercase;font-size:11.5px}
 /* FIX-5 Row 3: toggles label + controls */
 .header-controls-row{display:flex;gap:6px;padding:0 16px 4px;align-items:center;flex-wrap:wrap}
 .header-controls-row .row-label{font-size:11px;font-weight:700;color:var(--text-bright);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;min-width:80px}
@@ -294,6 +297,20 @@ table.data-table td.col-identity{white-space:nowrap}
 .badge-capital{background:#e8f5e9;color:var(--green);border:1px solid rgba(46,125,50,.3)}
 .badge-late{background:#fff8e1;color:var(--amber);border:1px solid rgba(141,110,0,.3)}
 .badge-early{background:#e3f2fd;color:var(--blue);border:1px solid rgba(21,101,192,.3)}
+.tm-grade{display:inline-block;min-width:22px;padding:2px 6px;border-radius:3px;font-weight:700;font-size:11px;text-align:center;line-height:1.2}
+.tm-A{background:#0d3817;color:#fff;border:1px solid #0d3817}
+.tm-B{background:#2e7d32;color:#fff;border:1px solid #2e7d32}
+.tm-C{background:#f2e1a5;color:#8d6e00;border:1px solid #d4b859}
+.tm-D{background:#ffe0b2;color:#e65100;border:1px solid #f4a460}
+.tm-F{background:#c62828;color:#fff;border:1px solid #b71c1c}
+.tm-N{background:#eee;color:#888;border:1px solid #ddd}
+.rating-pill{display:inline-block;min-width:22px;padding:2px 6px;border-radius:3px;font-weight:700;font-size:11px;text-align:center;line-height:1.2}
+.pill-A{background:#0d3817;color:#fff;border:1px solid #0d3817}
+.pill-B{background:#2e7d32;color:#fff;border:1px solid #2e7d32}
+.pill-C{background:#f2e1a5;color:#8d6e00;border:1px solid #d4b859}
+.pill-D{background:#ffe0b2;color:#e65100;border:1px solid #f4a460}
+.pill-F{background:#c62828;color:#fff;border:1px solid #b71c1c}
+.pill-N{background:#eee;color:#888;border:1px solid #ddd}
 .tick{color:var(--green)}.cross{color:var(--red)}
 .score-bar{display:inline-flex;gap:1px;vertical-align:middle}
 .score-bar .pip{width:6px;height:12px;border-radius:2px}
@@ -427,6 +444,46 @@ function indSecFilterPills(){
 // FIX-S4-PBEXCL: Exclude toggles for PB tab
 var pbExcludes={ex_mm99:false,ex_vcp:false,ex_utr:false};
 window.togglePbExclude=function(k){pbExcludes[k]=!pbExcludes[k];renderTab("pb")};
+
+// === SESSION 9: COMBO tab — TIMELINESS rating + stage/setup filter toggles ===
+// D-MD-UI-7: All ON default, sticky across tab switches, reset only on full page reload.
+// D-MD-FILTER-6: Capital Qual = stage==="Capital" per filter (already in data pipeline).
+// D-MD-FILTER-7: Ladder A>B>C>F>D>− (F overrides D among negatives).
+// D-MD-FILTER-10: Grade is independent of header toggles (computed from full filter universe).
+var comboStageFilters={capital:true,late:true,early:true};
+var comboSetupFilters={bp:true,pb:true,vcp:true,mm99:true,utr:true};
+window.toggleComboStage=function(k){comboStageFilters[k]=!comboStageFilters[k];renderTab("combos")};
+window.toggleComboSetup=function(k){comboSetupFilters[k]=!comboSetupFilters[k];renderTab("combos")};
+
+// Per-stock TIMELINESS grade (A/B/C/D/F/-).
+// Pass 1: uses 5 existing filters. Collapse/S3/S4 placeholders return false.
+function timeliness(r){
+  var bp=r.f.basing_plateau,pb=r.f.probing_bet,vcp=r.f.vcp,mm=r.f.mm99,ut=r.f.uptrend_retest;
+  var capUTR=ut&&ut.stage==="Capital";
+  var capVCP=vcp&&vcp.stage==="Capital"; // D-MD-FILTER-6: VCP placeholder, always false in Pass 1
+  var capMM=mm&&mm.stage==="Capital";
+  var capPB=pb&&pb.stage==="Capital";
+  var capCol=false; // Pass 2: Collapse filter
+  var capBP=bp&&bp.stage==="Capital";
+  var capS4=false; // Pass 2: Stage 4 Declining
+  var capS3=false; // Pass 2: Stage 3 Topping
+  if(capUTR||capVCP||capMM)return"A";
+  if(capPB||capCol)return"B";
+  if(capBP)return"C";
+  if(capS4)return"F"; // F overrides D
+  if(capS3)return"D";
+  return"-";
+}
+function timelinessBadge(g){
+  var cls=g==="-"?"tm-N":"tm-"+g;
+  var label=g==="-"?"&mdash;":g;
+  return'<span class="tm-grade '+cls+'">'+label+'</span>';
+}
+// Sort key: A=5, B=4, C=3, D=2, F=1, -=0 (descending = best first per D-MD-UI-8)
+function timelinessSortKey(g){
+  if(g==="A")return 5;if(g==="B")return 4;if(g==="C")return 3;
+  if(g==="D")return 2;if(g==="F")return 1;return 0;
+}
 
 var CANONICAL_INDUSTRIES=[
   "A. Consumer staples","B. Healthcare","C. Telecoms",
@@ -1524,15 +1581,17 @@ function commonTds(r){
 // FIX-S4-2: Stage moved to far right of ratings group (after Tags) per Richard Message 3
 // FIX-S4-QUAL: A-F ratings pulled from qualitative.json (IC Ratings Dashboard memos)
 function ratingBadge(rating){
+  // SESSION 9 Pass 1.1: full 5-colour A-F ramp matching D-MD-UI-2 palette.
+  // +/- modifiers preserved in displayed text but use base-letter colour.
   if(!rating)return'&mdash;';
   var base=rating.replace('+','').replace('-','').replace(' (upper)','').replace(' (lower)','');
-  var cls='';
-  if(base==='A')cls='pass';
-  else if(base==='B')cls='pass';
-  else if(base==='C')cls='amber';
-  else if(base==='D')cls='fail';
-  else if(base==='F')cls='fail';
-  return'<span class="'+cls+'" style="font-weight:600">'+rating+'</span>';
+  var cls='pill-N';
+  if(base==='A')cls='pill-A';
+  else if(base==='B')cls='pill-B';
+  else if(base==='C')cls='pill-C';
+  else if(base==='D')cls='pill-D';
+  else if(base==='F')cls='pill-F';
+  return'<span class="rating-pill '+cls+'">'+rating+'</span>';
 }
 function ratingsColHeaders(){
   return'<th class="col-ratings col-txt" title="P1: Technical Strength">P1</th>'
@@ -1634,6 +1693,24 @@ function buildHeaderControls(tabId){
     for(var e2=0;e2<exGrps.length;e2++){
       var eAct=pbExcludes[exGrps[e2].k]?" active":"";
       h+='<button class="group-toggle'+eAct+'" style="'+(pbExcludes[exGrps[e2].k]?"background:#c62828;border-color:#c62828;color:#fff":"")+'" onclick="togglePbExclude(\''+exGrps[e2].k+'\')">'+exGrps[e2].l+'</button>';
+    }
+    h+='</div>';
+  } else if(tabId==="combos"){
+    // SESSION 9: Stage filters + Setup filters. AND'd. All ON default. Sticky.
+    h+='<div class="group-toggles">';
+    var stages=[{k:"capital",l:"Capital"},{k:"late",l:"Late"},{k:"early",l:"Early"}];
+    for(var cs=0;cs<stages.length;cs++){
+      var csAct=comboStageFilters[stages[cs].k]?" active":"";
+      h+='<button class="group-toggle'+csAct+'" onclick="toggleComboStage(\''+stages[cs].k+'\')">'+stages[cs].l+'</button>';
+    }
+    h+='</div>';
+    h+='<span style="border-left:1px solid var(--border);height:20px;margin:0 6px"></span>';
+    h+='<div class="group-toggles">';
+    // Pass 1: 5 existing filters. Pass 2 will add Collapse, S3 Topping, S4 Declining buttons.
+    var setups=[{k:"bp",l:"BP"},{k:"pb",l:"PB"},{k:"vcp",l:"VCP"},{k:"mm99",l:"MM99"},{k:"utr",l:"UTR"}];
+    for(var cf=0;cf<setups.length;cf++){
+      var cfAct=comboSetupFilters[setups[cf].k]?" active":"";
+      h+='<button class="group-toggle'+cfAct+'" onclick="toggleComboSetup(\''+setups[cf].k+'\')">'+setups[cf].l+'</button>';
     }
     h+='</div>';
   } else if(tabId==="utr"){
@@ -2279,50 +2356,87 @@ function renderCombos(){
   buildHeaderControls("combos");
   var allRows=baseRows();
   var rows=[];
+  // Stage rank for AND'd toggle logic: stage S "active" means stock has reached at least S.
+  // Filter shows a stock if EXISTS (setup F, stage S) such that comboSetupFilters[F] && comboStageFilters[S]
+  //   && stockReachedAtLeast(F, S). Per D-MD-UI-7 sticky AND semantics.
+  var stageRank={"Early":1,"Late":2,"Capital":3};
+  function reaches(stockStage,toggleStage){
+    if(!stockStage)return false;
+    return stageRank[stockStage]>=stageRank[toggleStage];
+  }
   for(var j=0;j<allRows.length;j++){
     var r=allRows[j];
-    r.bp_stage=r.f.basing_plateau?r.f.basing_plateau.stage:"";r.pb_stage=r.f.probing_bet?r.f.probing_bet.stage:"";
-    r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.utr_stage=r.f.uptrend_retest?r.f.uptrend_retest.stage:"";
-    r.vcp_s2=r.f.vcp?r.f.vcp.stage_2_uptrend:false;
-    r.mm_score=r.f.mm99?r.f.mm99.score_11:0;
-    r.filter_count=0;
-    if(r.bp_stage)r.filter_count++;if(r.pb_stage)r.filter_count++;
-    if(r.mm_stage)r.filter_count++;if(r.utr_stage)r.filter_count++;
-    if(r.vcp_s2)r.filter_count++;
-    r.capital_count=0;
-    if(r.bp_stage==="Capital")r.capital_count++;if(r.pb_stage==="Capital")r.capital_count++;
-    if(r.mm_stage==="Capital")r.capital_count++;if(r.utr_stage==="Capital")r.capital_count++;
-    rows.push(r);
+    r.bp_stage=r.f.basing_plateau?r.f.basing_plateau.stage:"";
+    r.pb_stage=r.f.probing_bet?r.f.probing_bet.stage:"";
+    r.vcp_stage=r.f.vcp?r.f.vcp.stage:"";
+    r.mm_stage=r.f.mm99?r.f.mm99.stage:"";
+    r.utr_stage=r.f.uptrend_retest?r.f.uptrend_retest.stage:"";
+    r.tm_grade=timeliness(r);
+    r.tm_key=timelinessSortKey(r.tm_grade);
+    // Apply header toggles. AND semantics: at least one (setup,stage) pair active AND stock matches.
+    var keep=false;
+    var pairs=[
+      {f:"bp",s:r.bp_stage},{f:"pb",s:r.pb_stage},{f:"vcp",s:r.vcp_stage},
+      {f:"mm99",s:r.mm_stage},{f:"utr",s:r.utr_stage}
+    ];
+    for(var p=0;p<pairs.length;p++){
+      if(!comboSetupFilters[pairs[p].f])continue;
+      if(comboStageFilters.capital&&reaches(pairs[p].s,"Capital")){keep=true;break}
+      if(comboStageFilters.late&&reaches(pairs[p].s,"Late")){keep=true;break}
+      if(comboStageFilters.early&&reaches(pairs[p].s,"Early")){keep=true;break}
+    }
+    if(keep)rows.push(r);
   }
-  rows=sortData(rows,currentSort.col,currentSort.dir);
+  // D-MD-UI-8: default sort = TIMELINESS desc (best first); user can override by clicking columns.
+  if(currentSort.col!=="tm_key"&&currentSort.col!=="mm99_score"){
+    // first-visit default: tm_key desc
+    rows=sortData(rows,"tm_key","desc");
+  } else {
+    rows=sortData(rows,currentSort.col,currentSort.dir);
+  }
   var totalCount=allRows.length;
-  var multi=0,cap2=0;
-  for(var j=0;j<rows.length;j++){if(rows[j].filter_count>=2)multi++;if(rows[j].capital_count>=2)cap2++}
-  var h='<div class="summary-tile" id="section-summary"><h3>Combinations &mdash; Cross-Filter Matrix</h3>'
-    +'<div class="sub">Which stocks qualify across multiple filters simultaneously. Higher filter count = stronger technical setup.</div>'
-    +'<div class="summary-stats">'+sumStat("2+ Filters",xyFmt(multi,rows.length),"green")+sumStat("2+ Capital",xyFmt(cap2,rows.length),"green")+sumStat("Shown",xyFmt(rows.length,totalCount))+'</div></div>';
+  // Summary: count by grade
+  var gA=0,gB=0,gC=0,gD=0,gF=0,gN=0;
+  for(var j=0;j<rows.length;j++){
+    var g=rows[j].tm_grade;
+    if(g==="A")gA++;else if(g==="B")gB++;else if(g==="C")gC++;
+    else if(g==="D")gD++;else if(g==="F")gF++;else gN++;
+  }
+  var h='<div class="summary-tile" id="section-summary"><h3>Combinations &mdash; Timeliness Rating</h3>'
+    +'<div class="sub">Per-stock A/B/C/D/F grade collapsing UTR/VCP/MM99/PB/BP filter passes via priority ladder. Header toggles slice by qualification stage &times; setup filter (AND).</div>'
+    +'<div class="summary-stats">'
+    +sumStat("A",xyFmt(gA,rows.length),"green")
+    +sumStat("B",xyFmt(gB,rows.length),"green")
+    +sumStat("C",xyFmt(gC,rows.length),"amber")
+    +sumStat("D",xyFmt(gD,rows.length),"amber")
+    +sumStat("F",xyFmt(gF,rows.length),"red")
+    +sumStat("Shown",xyFmt(rows.length,totalCount))
+    +'</div></div>';
 
   h+=buildPortfolioTile(currentTab);
   rows=applyIndSecFilter(rows);
   h+='<h3 class="qualified-title" id="section-stocks">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</h3>';
   h+='<div class="data-table-wrap"><table class="data-table"><thead><tr>';
-  h+=commonCols()+th("Filters","filter_count","col-num col-filter")+th("Capitals","capital_count","col-num col-filter")
-    +th("Basing Plateau","bp_stage","col-txt col-filter")+th("Probing Bet","pb_stage","col-txt col-filter")+th("MM 99","mm_stage","col-txt col-filter")
-    +th("Uptrend Retest","utr_stage","col-txt col-filter")+th("VCP Stage 2","vcp_s2","col-filter")+th("MM Score","mm_score","col-num col-filter")
+  // Column order (left-to-right per D-MD-FILTER-8 final order): common | TIMELINESS | Collapse(P2) | BP | PB | VCP | S3(P2) | S4(P2) | MM99 | UTR | ratings
+  // Pass 1: only existing 5 filter columns rendered.
+  h+=commonCols()
+    +th("Timeliness","tm_key","col-txt col-filter")
+    +th("Basing Plateau","bp_stage","col-txt col-filter")
+    +th("Probing Bet","pb_stage","col-txt col-filter")
+    +th("VCP","vcp_stage","col-txt col-filter")
+    +th("MM 99","mm_stage","col-txt col-filter")
+    +th("Uptrend Retest","utr_stage","col-txt col-filter")
     +ratingsColHeaders();
   h+='</tr></thead><tbody>';
   for(var j=0;j<rows.length;j++){
     var r=rows[j];
-    var fc=r.filter_count>=3?"green":r.filter_count>=2?"amber":r.filter_count>=1?"":"neutral";
     h+='<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+commonTds(r)
-      +'<td class="col-num col-filter combo-cell '+fc+'">'+r.filter_count+'</td>'
-      +'<td class="col-num col-filter combo-cell '+(r.capital_count>=2?"green":r.capital_count>=1?"amber":"")+'">'+r.capital_count+'</td>'
+      +'<td class="col-txt col-filter">'+timelinessBadge(r.tm_grade)+'</td>'
       +'<td class="col-txt col-filter">'+badge(r.bp_stage)+'</td>'
       +'<td class="col-txt col-filter">'+badge(r.pb_stage)+'</td>'
+      +'<td class="col-txt col-filter">'+badge(r.vcp_stage)+'</td>'
       +'<td class="col-txt col-filter">'+badge(r.mm_stage)+'</td>'
       +'<td class="col-txt col-filter">'+badge(r.utr_stage)+'</td>'
-      +'<td class="col-filter">'+(r.vcp_s2?'<span class="pass">S2</span>':'<span class="fail">&mdash;</span>')+'</td>'
-      +'<td class="col-num col-filter">'+scorePips(r.mm_score,11)+'</td>'
       +ratingsColTds(r)+'</tr>';
   }
   h+='</tbody></table></div>';
@@ -2687,21 +2801,4 @@ def main():
     html = html.replace("/* DATA_INJECTION_POINT */", data_js)
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        f.write(html)
-
-    size = os.path.getsize(OUTPUT_PATH)
-    print("  Written: {} ({:,} bytes)".format(OUTPUT_PATH, size))
-
-    # Post-write backup
-    backup_dir = PROJECT_DIR / "backups"
-    backup_dir.mkdir(exist_ok=True)
-    ts = datetime.now().strftime("%Y%m%d_%H%M")
-    backup_path = backup_dir / "index_post_{}.html".format(ts)
-    shutil.copy2(OUTPUT_PATH, backup_path)
-    print("  Post-write backup: {}".format(backup_path))
-    print("Done.")
-
-
-if __name__ == "__main__":
-    main()
+    with open(OUTPUT_PAT
