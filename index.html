@@ -68,7 +68,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 /* FIX-11: Fixed table layout, no horizontal scroll */
 .data-table-wrap{overflow-x:clip;border-radius:8px;border:1px solid var(--border)}
 table.data-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:auto}
-table.data-table th{background:#f0ede3;color:#6b6b6b;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:4px 4px;text-align:left;border-bottom:2px solid var(--border);position:sticky;top:var(--header-height);z-index:5;cursor:pointer;white-space:nowrap;user-select:none;-webkit-user-select:none;overflow:hidden;text-overflow:ellipsis}
+/* SESSION 10 — D-MD-UI-13: sticky thead replaces per-row top arithmetic. Browser stacks group-header-row and col-header-row natively below the page header. Works on every screen size, every zoom level, every device. Box-shadow gives the freeze-line a visible separator from rows below. background needed so row content scrolling underneath doesn't bleed through cell-border gaps. */
+table.data-table thead{position:sticky;top:var(--header-height);z-index:8;background:#f0ede3;box-shadow:0 2px 4px rgba(0,0,0,0.06)}
+table.data-table th{background:#f0ede3;color:#6b6b6b;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:4px 4px;text-align:left;border-bottom:2px solid var(--border);z-index:5;cursor:pointer;white-space:nowrap;user-select:none;-webkit-user-select:none;overflow:hidden;text-overflow:ellipsis}
+/* SESSION 9 Pass 1.2 — D-MD-UI-10: Live Portfolio table thead is non-sticky (it's short, no need to pin; pinning competes with Qualified Stocks thead) */
+table.data-table.data-table-portfolio thead{position:static;box-shadow:none}
+table.data-table.data-table-portfolio th{position:static}
+table.data-table.data-table-portfolio .col-header-row th{position:static}
+/* SESSION 10 — D-MD-UI-13b: Tile-style tables (industry/sector overview tiles, qualification group tiles) are short overview tables, not long scrollers. Sticky thead would cause the header to "follow" the page scroll and overlap mid-tile data. Exempt them. */
+table.data-table.data-table-tile thead{position:static;box-shadow:none}
+table.data-table.data-table-tile th{position:static}
 table.data-table th:hover{color:var(--text)}
 table.data-table th .sort-arrow{margin-left:2px;opacity:.4}
 table.data-table th.sorted .sort-arrow{opacity:1;color:var(--amber)}
@@ -80,10 +89,9 @@ table.data-table tr:hover{background:var(--card-hover)}
 table.data-table th.col-num{text-align:right}
 table.data-table th.col-txt{text-align:left}
 
-/* FIX-4: Group header row above column headers */
-/* FIX-SORT: Group header row sticks at top:0; column header row sticks below it at top:20px */
-table.data-table .group-header-row th{background:#f5f3ec;font-size:9px;font-weight:600;padding:2px 4px;text-align:center;border-bottom:1px solid var(--border);cursor:default;letter-spacing:.4px;z-index:6;top:var(--header-height);pointer-events:none}
-table.data-table .col-header-row th{top:calc(var(--header-height) + 20px);z-index:8}
+/* SESSION 10: group-header-row + col-header-row no longer need per-row top arithmetic — sticky <thead> stacks them natively */
+table.data-table .group-header-row th{background:#f5f3ec;font-size:9px;font-weight:600;padding:2px 4px;text-align:center;border-bottom:1px solid var(--border);cursor:default;letter-spacing:.4px;z-index:6;pointer-events:none}
+table.data-table .col-header-row th{z-index:8}
 
 /* Column group borders */
 .grp-lt-first{border-left:2px solid rgba(200,50,50,0.25)}
@@ -152,6 +160,46 @@ table.data-table td.col-identity{white-space:nowrap}
 .tm-D{background:#ffe0b2;color:#e65100;border:1px solid #f4a460}
 .tm-F{background:#c62828;color:#fff;border:1px solid #b71c1c}
 .tm-N{background:#eee;color:#888;border:1px solid #ddd}
+.rating-pill{display:inline-block;min-width:22px;padding:2px 6px;border-radius:3px;font-weight:700;font-size:11px;text-align:center;line-height:1.2}
+.pill-A{background:#0d3817;color:#fff;border:1px solid #0d3817}
+.pill-B{background:#2e7d32;color:#fff;border:1px solid #2e7d32}
+.pill-C{background:#f2e1a5;color:#8d6e00;border:1px solid #d4b859}
+.pill-D{background:#ffe0b2;color:#e65100;border:1px solid #f4a460}
+.pill-F{background:#c62828;color:#fff;border:1px solid #b71c1c}
+.pill-N{background:#eee;color:#888;border:1px solid #ddd}
+/* SESSION 9 Pass 1.1: COMBO summary recut — 2-pane grid layout */
+.combo-summary-grid{display:grid;grid-template-columns:minmax(420px,2fr) minmax(220px,1fr);gap:18px;align-items:start;margin-top:8px}
+.combo-summary-left{}
+.combo-summary-right{}
+.combo-grid{width:100%;border-collapse:collapse;font-size:11px}
+.combo-grid th,.combo-grid td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:left}
+.combo-grid-corner{font-weight:700;color:var(--text-bright);background:rgba(27,61,92,0.04);text-transform:uppercase;letter-spacing:.4px;font-size:10px}
+.combo-grid-colhdr{font-weight:700;color:var(--text-bright);text-align:center;text-transform:uppercase;letter-spacing:.4px;font-size:10px;background:rgba(27,61,92,0.04)}
+.combo-grid-rowlabel{font-weight:600;color:var(--text);white-space:nowrap}
+.combo-grid-note{font-weight:400;color:#999;font-size:9px;font-style:italic;margin-left:4px}
+.combo-grid-cell{text-align:center;font-variant-numeric:tabular-nums;color:var(--text);font-weight:600}
+.combo-grid-den{color:#999;font-weight:400;font-size:10px}
+.combo-grid-zero{color:#bbb;font-weight:400}
+.combo-grid-row-pending td,.combo-grid-row-pending th{opacity:.55}
+.combo-grade-block{border:1px solid var(--border);border-radius:4px;padding:10px 12px;background:#fff}
+.combo-grade-title{font-weight:700;font-size:10px;color:var(--text-bright);text-transform:uppercase;letter-spacing:.4px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.combo-grade-row{display:flex;align-items:center;gap:10px;padding:3px 0}
+.combo-grade-count{font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;font-size:13px;margin-left:auto}
+.combo-grade-den{color:#999;font-weight:400;font-size:11px}
+.combo-grade-foot{margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:10px;color:#888;font-style:italic}
+.combo-col-pending{opacity:.55}
+/* SESSION 9 Pass 1.2 — D-MD-UI-11: Grade filter buttons tinted with grade colour when active */
+.grade-toggle{font-weight:700;letter-spacing:.5px;border-left-width:3px}
+.grade-toggle.grade-toggle-A.active{background:#0d3817;color:#fff;border-color:#0d3817;border-left-color:#0d3817}
+.grade-toggle.grade-toggle-B.active{background:#2e7d32;color:#fff;border-color:#2e7d32;border-left-color:#2e7d32}
+.grade-toggle.grade-toggle-C.active{background:#f2e1a5;color:#8d6e00;border-color:#d4b859;border-left-color:#8d6e00}
+.grade-toggle.grade-toggle-D.active{background:#ffe0b2;color:#e65100;border-color:#f4a460;border-left-color:#e65100}
+.grade-toggle.grade-toggle-F.active{background:#c62828;color:#fff;border-color:#b71c1c;border-left-color:#b71c1c}
+.grade-toggle.grade-toggle-A{border-left-color:#0d3817}
+.grade-toggle.grade-toggle-B{border-left-color:#2e7d32}
+.grade-toggle.grade-toggle-C{border-left-color:#8d6e00}
+.grade-toggle.grade-toggle-D{border-left-color:#e65100}
+.grade-toggle.grade-toggle-F{border-left-color:#b71c1c}
 .tick{color:var(--green)}.cross{color:var(--red)}
 .score-bar{display:inline-flex;gap:1px;vertical-align:middle}
 .score-bar .pip{width:6px;height:12px;border-radius:2px}
@@ -209,11 +257,8 @@ th.utr-l-first,th.utr-l-last{border-top:2px solid rgba(230,100,0,0.30)}
 .utr-c-first{border-left:2px solid rgba(46,125,50,0.30)}
 .utr-c-last{border-right:2px solid rgba(46,125,50,0.30)}
 th.utr-c-first,th.utr-c-last{border-top:2px solid rgba(46,125,50,0.30)}
-/* UTR key description row above headers */
-.utr-key-row td,.gen-key-row td{font-size:9px;color:#8b8680;font-weight:400;font-style:italic;text-align:center;padding:2px 4px;white-space:normal;line-height:1.2;vertical-align:bottom;border-bottom:none;max-width:80px;overflow:hidden;text-overflow:ellipsis;position:sticky;top:var(--header-height);z-index:5;background:#f7f5ef}
-.utr-key-row+.group-header-row th,.gen-key-row+.group-header-row th{top:calc(var(--header-height) + 22px)}
-.utr-key-row+.group-header-row+.col-header-row th,.gen-key-row+.group-header-row+.col-header-row th{top:calc(var(--header-height) + 42px)}
-.gen-key-row+.col-header-row th{top:calc(var(--header-height) + 22px)}
+/* UTR key description row above headers — SESSION 10: sticky <thead> handles vertical stacking, no per-row top needed */
+.utr-key-row td,.gen-key-row td{font-size:9px;color:#8b8680;font-weight:400;font-style:italic;text-align:center;padding:2px 4px;white-space:normal;line-height:1.2;vertical-align:bottom;border-bottom:none;max-width:80px;overflow:hidden;text-overflow:ellipsis;z-index:5;background:#f7f5ef}
 /* UTR: hide inputs columns */
 .utr-inputs-hidden .col-input{display:none}
 /* UTR: Test MA colour coding */
@@ -355,8 +400,11 @@ window.togglePbExclude=function(k){pbExcludes[k]=!pbExcludes[k];renderTab("pb")}
 // D-MD-FILTER-10: Grade is independent of header toggles (computed from full filter universe).
 var comboStageFilters={capital:true,late:true,early:true};
 var comboSetupFilters={bp:true,pb:true,vcp:true,mm99:true,utr:true};
+// SESSION 9 Pass 1.2: D-MD-UI-11 grade filter — applies to BOTH Qualified Stocks AND Live Portfolio.
+var comboGradeFilters={A:true,B:true,C:true,D:true,F:true,N:true};
 window.toggleComboStage=function(k){comboStageFilters[k]=!comboStageFilters[k];renderTab("combos")};
 window.toggleComboSetup=function(k){comboSetupFilters[k]=!comboSetupFilters[k];renderTab("combos")};
+window.toggleComboGrade=function(k){comboGradeFilters[k]=!comboGradeFilters[k];renderTab("combos")};
 
 // Per-stock TIMELINESS grade (A/B/C/D/F/-).
 // Pass 1: uses 5 existing filters. Collapse/S3/S4 placeholders return false.
@@ -1274,7 +1322,7 @@ function buildIndSecTables(rows,groupDefs){
   // FIX-10: X / Y in industry/sector counts
   var h='<div class="ind-sec-wrap" id="section-industries">';
   h+='<div class="half-table"><div class="half-title">Industries</div>';
-  h+='<div class="data-table-wrap"><table class="data-table"><thead><tr><th class="col-txt" onclick="tileSortTable(this)" style="cursor:pointer">Industry</th><th class="col-num" onclick="tileSortTable(this)" style="cursor:pointer"># Stocks</th>';
+  h+='<div class="data-table-wrap"><table class="data-table data-table-tile"><thead><tr><th class="col-txt" onclick="tileSortTable(this)" style="cursor:pointer">Industry</th><th class="col-num" onclick="tileSortTable(this)" style="cursor:pointer"># Stocks</th>';
   if(groupDefs){for(k=0;k<groupDefs.length;k++)h+='<th class="col-num" onclick="tileSortTable(this)" style="cursor:pointer">'+groupDefs[k].label+'</th>'}
   h+='</tr></thead><tbody>';
   for(j=0;j<indKeys.length;j++){
@@ -1295,7 +1343,7 @@ function buildIndSecTables(rows,groupDefs){
   h+='</tbody></table></div></div>';
 
   h+='<div class="half-table" id="section-sectors"><div class="half-title">Sectors</div>';
-  h+='<div class="data-table-wrap"><table class="data-table"><thead><tr><th class="col-txt" style="width:35%;cursor:pointer" onclick="tileSortTable(this)">Sector</th><th class="col-txt" style="width:20%;cursor:pointer" onclick="tileSortTable(this)">Industry</th><th class="col-num" style="width:30px;cursor:pointer" onclick="tileSortTable(this)">#</th>';
+  h+='<div class="data-table-wrap"><table class="data-table data-table-tile"><thead><tr><th class="col-txt" style="width:35%;cursor:pointer" onclick="tileSortTable(this)">Sector</th><th class="col-txt" style="width:20%;cursor:pointer" onclick="tileSortTable(this)">Industry</th><th class="col-num" style="width:30px;cursor:pointer" onclick="tileSortTable(this)">#</th>';
   if(groupDefs){for(k=0;k<groupDefs.length;k++)h+='<th class="col-num" onclick="tileSortTable(this)" style="cursor:pointer">'+groupDefs[k].label+'</th>'}
   h+='</tr></thead><tbody>';
   for(j=0;j<secKeys.length;j++){
@@ -1333,7 +1381,7 @@ function buildQualTilesV2(rows,groups,totalCount,headersFn,rowFn){
     if(passed.length===0){
       h+='<p style="color:var(--text-dim);padding:8px 0">No stocks currently meet this criteria.</p>';
     } else {
-      h+='<div class="data-table-wrap"><table class="data-table"><thead>'+headersFn()+'</thead><tbody>';
+      h+='<div class="data-table-wrap"><table class="data-table data-table-tile"><thead>'+headersFn()+'</thead><tbody>';
       for(var j2=0;j2<passed.length;j2++)h+=rowFn(passed[j2]);
       h+='</tbody></table></div>';
     }
@@ -1374,10 +1422,63 @@ function buildPortfolioTile(tabId){
   for(var j=0;j<allR.length;j++){if(pt[allR[j].ticker]&&passIndSecFilter(allR[j]))posRows.push(allR[j])}
   if(posRows.length===0)return"";
   var totalCount=allR.length;
+  // SESSION 9 Pass 1.2: D-MD-UI-9 — Live Portfolio columns mirror Qualified Stocks per tab.
+  // SESSION 9 Pass 1.2: D-MD-UI-10 — data-table-portfolio class disables sticky thead.
   var h='<h3 class="qualified-title" id="section-portfolio">Live Portfolio ('+posRows.length+')</h3>';
-  h+='<div class="data-table-wrap"><table class="data-table"><thead><tr>'+commonCols()+ratingsColHeaders()+'</tr></thead><tbody>';
-  for(var j=0;j<posRows.length;j++){
-    h+='<tr onclick="openChart(\''+posRows[j].ticker+'\')" style="cursor:pointer">'+commonTds(posRows[j])+ratingsColTds(posRows[j])+'</tr>';
+  h+='<div class="data-table-wrap"><table class="data-table data-table-portfolio"><thead><tr>';
+  // Tab-aware column structure — TIMELINESS gets full filter columns + grade.
+  if(tabId==="combos"){
+    // Enrich rows with filter stage data + tm_grade (mirrors renderCombos enrichment).
+    for(var je=0;je<posRows.length;je++){
+      var rE=posRows[je];
+      rE.bp_stage=rE.f.basing_plateau?rE.f.basing_plateau.stage:"";
+      rE.pb_stage=rE.f.probing_bet?rE.f.probing_bet.stage:"";
+      rE.vcp_stage=rE.f.vcp?rE.f.vcp.stage:"";
+      rE.mm_stage=rE.f.mm99?rE.f.mm99.stage:"";
+      rE.utr_stage=rE.f.uptrend_retest?rE.f.uptrend_retest.stage:"";
+      rE.tm_grade=timeliness(rE);
+      rE.tm_key=timelinessSortKey(rE.tm_grade);
+    }
+    // D-MD-UI-11: Apply grade filter (filters BOTH tables — Q-PG8).
+    var posRowsGF=[];
+    for(var jg=0;jg<posRows.length;jg++){
+      var gKey=posRows[jg].tm_grade==="-"?"N":posRows[jg].tm_grade;
+      if(comboGradeFilters[gKey])posRowsGF.push(posRows[jg]);
+    }
+    posRows=posRowsGF;
+    h+=commonCols()
+      +'<th class="col-txt col-filter">Timeliness</th>'
+      +'<th class="col-txt col-filter combo-col-pending">Collapse</th>'
+      +'<th class="col-txt col-filter">Basing Plateau</th>'
+      +'<th class="col-txt col-filter">Probing Bet</th>'
+      +'<th class="col-txt col-filter">VCP</th>'
+      +'<th class="col-txt col-filter combo-col-pending">S3 Topping</th>'
+      +'<th class="col-txt col-filter combo-col-pending">S4 Declining</th>'
+      +'<th class="col-txt col-filter">MM 99</th>'
+      +'<th class="col-txt col-filter">Uptrend Retest</th>'
+      +ratingsColHeaders();
+    h+='</tr></thead><tbody>';
+    var pendBadgeLP='<span class="badge badge-fail" title="Pass 2 — pending">&mdash;</span>';
+    for(var k=0;k<posRows.length;k++){
+      var rk=posRows[k];
+      h+='<tr onclick="openChart(\''+rk.ticker+'\')" style="cursor:pointer">'+commonTds(rk)
+        +'<td class="col-txt col-filter">'+timelinessBadge(rk.tm_grade)+'</td>'
+        +'<td class="col-txt col-filter combo-col-pending">'+pendBadgeLP+'</td>'
+        +'<td class="col-txt col-filter">'+badge(rk.bp_stage)+'</td>'
+        +'<td class="col-txt col-filter">'+badge(rk.pb_stage)+'</td>'
+        +'<td class="col-txt col-filter">'+badge(rk.vcp_stage)+'</td>'
+        +'<td class="col-txt col-filter combo-col-pending">'+pendBadgeLP+'</td>'
+        +'<td class="col-txt col-filter combo-col-pending">'+pendBadgeLP+'</td>'
+        +'<td class="col-txt col-filter">'+badge(rk.mm_stage)+'</td>'
+        +'<td class="col-txt col-filter">'+badge(rk.utr_stage)+'</td>'
+        +ratingsColTds(rk)+'</tr>';
+    }
+  } else {
+    // Other tabs: keep existing behaviour (commonCols + ratings).
+    h+=commonCols()+ratingsColHeaders()+'</tr></thead><tbody>';
+    for(var j=0;j<posRows.length;j++){
+      h+='<tr onclick="openChart(\''+posRows[j].ticker+'\')" style="cursor:pointer">'+commonTds(posRows[j])+ratingsColTds(posRows[j])+'</tr>';
+    }
   }
   h+='</tbody></table></div>';
   return h;
@@ -1616,6 +1717,15 @@ function buildHeaderControls(tabId){
       h+='<button class="group-toggle'+cfAct+'" onclick="toggleComboSetup(\''+setups[cf].k+'\')">'+setups[cf].l+'</button>';
     }
     h+='</div>';
+    // SESSION 9 Pass 1.2: Grade filter row (D-MD-UI-11).
+    h+='<span style="border-left:1px solid var(--border);height:20px;margin:0 6px"></span>';
+    h+='<div class="group-toggles">';
+    var grades=[{k:"A",l:"A"},{k:"B",l:"B"},{k:"C",l:"C"},{k:"D",l:"D"},{k:"F",l:"F"}];
+    for(var gf=0;gf<grades.length;gf++){
+      var gfAct=comboGradeFilters[grades[gf].k]?" active":"";
+      h+='<button class="group-toggle grade-toggle grade-toggle-'+grades[gf].k+gfAct+'" onclick="toggleComboGrade(\''+grades[gf].k+'\')">'+grades[gf].l+'</button>';
+    }
+    h+='</div>';
   } else if(tabId==="utr"){
     h+='<div class="group-toggles">';
     var stgBtns=[{k:"early",l:"Early+"},{k:"late",l:"Late+"},{k:"capital",l:"Capital"}];
@@ -1766,17 +1876,18 @@ function renderMM99(){
       +ratingsColTds(r)+'</tr>';
   }
 
-  // Live Portfolio + Qualified Stocks in ONE table for column alignment
+  // SESSION 10 — split Live Portfolio + Qualified Stocks into two separate tables, mirroring BP/PB/UTR pattern.
+  // Each table has its own <thead> (LP non-sticky via data-table-portfolio class; QS sticky), each gets its own <h3> section heading.
   var posRows=applyIndSecFilter(filterToPositions(allRows));
   rows=applyIndSecFilter(rows);
-  var colCount=document.createElement("div");colCount.innerHTML=mm99Headers();var nCols=0;var lastRow=colCount.querySelector("tr:last-child");if(lastRow)nCols=lastRow.querySelectorAll("th").length;if(!nCols)nCols=33;
-  h+='<div class="data-table-wrap"><table class="data-table"><thead>'+mm99Headers()+'</thead>';
   if(posRows.length>0){
-    h+='<tbody><tr class="section-label-row" id="section-portfolio"><td colspan="'+nCols+'">Live Portfolio ('+posRows.length+')</td></tr>';
+    h+='<h3 class="qualified-title" id="section-portfolio">Live Portfolio ('+posRows.length+')</h3>';
+    h+='<div class="data-table-wrap" style="margin-bottom:12px"><table class="data-table data-table-portfolio"><thead>'+mm99Headers()+'</thead><tbody>';
     for(var pj=0;pj<posRows.length;pj++)h+=mm99Row(posRows[pj]);
-    h+='</tbody>';
+    h+='</tbody></table></div>';
   }
-  h+='<tbody><tr class="section-label-row" id="section-stocks"><td colspan="'+nCols+'">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</td></tr>';
+  h+='<h3 class="qualified-title" id="section-stocks">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</h3>';
+  h+='<div class="data-table-wrap"><table class="data-table"><thead>'+mm99Headers()+'</thead><tbody>';
   for(var j=0;j<rows.length;j++)h+=mm99Row(rows[j]);
   h+='</tbody></table></div>';
   h+=buildQualTilesV2(applyIndSecFilter(allRows),[
@@ -1876,7 +1987,7 @@ function renderBP(){
   for(var pk=0;pk<posRowsBP.length;pk++){var pr=posRowsBP[pk];if(pr.bp_stage===undefined){var bpd=pr.f.basing_plateau;if(!bpd||!bpd.group_a){pr.bp_stage="";pr.ga=false;pr.gb=false;pr.gc=false;pr.t1=false;pr.t2=false;pr.t3=false;pr.t4=false;pr.t5=false;pr.t6=false;pr.t7=false;pr.t8=false;}else{pr.bp_stage=bpd.stage;pr.ga=bpd.group_a.pass;pr.gb=bpd.group_b.pass;pr.gc=bpd.group_c.pass;pr.t1=bpd.group_a.tests.T1;pr.t2=bpd.group_a.tests.T2;pr.t3=bpd.group_b.tests.T3;pr.t4=bpd.group_b.tests.T4;pr.t5=bpd.group_b.tests.T5;pr.t6=bpd.group_c.tests.T6;pr.t7=bpd.group_c.tests.T7;pr.t8=bpd.group_c.tests.T8;}var m200b=pr.mas?pr.mas["200D"]:null,m150b=pr.mas?pr.mas["150D"]:null,m50b=pr.mas?pr.mas["50D"]:null;pr.t1_pct=m200b?(pr.price-m200b)/m200b:null;pr.t2_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t3_pct=m200b?(pr.price-m200b)/m200b:null;pr.t4_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t5_pct=(m150b&&m200b)?(m150b-m200b)/m200b:null;pr.t6_pct=m200b?(pr.price-m200b)/m200b:null;pr.t7_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t8_pct=(m150b&&m200b)?(m150b-m200b)/m200b:null;pr.mm_stage=pr.f.mm99?pr.f.mm99.stage:"";pr.pb_stage2=pr.f.probing_bet?pr.f.probing_bet.stage:"";pr.ma_map_price=pr.price;pr.ma_map_200=m200b;pr.ma_map_150=m150b;pr.ma_map_50=m50b;}}
   if(posRowsBP.length>0){
     h+='<h3 class="qualified-title" id="section-portfolio">Live Portfolio ('+posRowsBP.length+')</h3>';
-    h+='<div class="data-table-wrap" style="margin-bottom:12px"><table class="data-table"><thead>'+bpHeaders()+'</thead><tbody>';
+    h+='<div class="data-table-wrap" style="margin-bottom:12px"><table class="data-table data-table-portfolio"><thead>'+bpHeaders()+'</thead><tbody>';
     for(var pj=0;pj<posRowsBP.length;pj++)h+=bpRow(posRowsBP[pj]);
     h+='</tbody></table></div>';
   }
@@ -1990,7 +2101,7 @@ function renderPB(){
   var posRowsPB2f=[];for(var pf2=0;pf2<posRowsPB2.length;pf2++){if(passIndSecFilter(posRowsPB2[pf2]))posRowsPB2f.push(posRowsPB2[pf2])}
   if(posRowsPB2f.length>0){
     h+='<h3 class="qualified-title" id="section-portfolio">Live Portfolio ('+posRowsPB2f.length+')</h3>';
-    h+='<div class="data-table-wrap"><table class="data-table"><thead>'+pbHeaders()+'</thead><tbody>';
+    h+='<div class="data-table-wrap"><table class="data-table data-table-portfolio"><thead>'+pbHeaders()+'</thead><tbody>';
     for(var pj=0;pj<posRowsPB2f.length;pj++)h+=pbRow(posRowsPB2f[pj]);
     h+='</tbody></table></div>';
   }
@@ -2276,6 +2387,9 @@ function renderCombos(){
     r.utr_stage=r.f.uptrend_retest?r.f.uptrend_retest.stage:"";
     r.tm_grade=timeliness(r);
     r.tm_key=timelinessSortKey(r.tm_grade);
+    // SESSION 9 Pass 1.2 D-MD-UI-11: Apply grade filter (AND with stage/setup toggles).
+    var gKeyR=r.tm_grade==="-"?"N":r.tm_grade;
+    if(!comboGradeFilters[gKeyR])continue;
     // Apply header toggles. AND semantics: at least one (setup,stage) pair active AND stock matches.
     var keep=false;
     var pairs=[
@@ -2298,46 +2412,103 @@ function renderCombos(){
     rows=sortData(rows,currentSort.col,currentSort.dir);
   }
   var totalCount=allRows.length;
-  // Summary: count by grade
+  // SESSION 9 Pass 1.1: Summary recut — 2 panes side by side.
+  // Pane 1: Filter (Y) x Stage (X) cumulative counts grid.
+  //   Cumulative = stocks reaching at least that stage on that filter (D-MD-UI-7 stage semantics).
+  //   Denominator = total universe (allRows.length), independent of header toggles (Q-PG3).
+  // Pane 2: TIMELINESS grade distribution (A/B/C/D/F/-).
+  //   Computed from allRows (full universe per D-MD-FILTER-10), not from filtered rows.
+  var stageCounts={
+    bp:{e:0,l:0,c:0},col:{e:0,l:0,c:0},pb:{e:0,l:0,c:0},vcp:{e:0,l:0,c:0},
+    s3:{e:0,l:0,c:0},s4:{e:0,l:0,c:0},mm99:{e:0,l:0,c:0},utr:{e:0,l:0,c:0}
+  };
   var gA=0,gB=0,gC=0,gD=0,gF=0,gN=0;
-  for(var j=0;j<rows.length;j++){
-    var g=rows[j].tm_grade;
-    if(g==="A")gA++;else if(g==="B")gB++;else if(g==="C")gC++;
-    else if(g==="D")gD++;else if(g==="F")gF++;else gN++;
+  function bump(obj,stg){
+    if(stg==="Capital"){obj.c++;obj.l++;obj.e++;}
+    else if(stg==="Late"){obj.l++;obj.e++;}
+    else if(stg==="Early"){obj.e++;}
   }
-  var h='<div class="summary-tile" id="section-summary"><h3>Combinations &mdash; Timeliness Rating</h3>'
-    +'<div class="sub">Per-stock A/B/C/D/F grade collapsing UTR/VCP/MM99/PB/BP filter passes via priority ladder. Header toggles slice by qualification stage &times; setup filter (AND).</div>'
-    +'<div class="summary-stats">'
-    +sumStat("A",xyFmt(gA,rows.length),"green")
-    +sumStat("B",xyFmt(gB,rows.length),"green")
-    +sumStat("C",xyFmt(gC,rows.length),"amber")
-    +sumStat("D",xyFmt(gD,rows.length),"amber")
-    +sumStat("F",xyFmt(gF,rows.length),"red")
-    +sumStat("Shown",xyFmt(rows.length,totalCount))
+  for(var j2=0;j2<allRows.length;j2++){
+    var rA=allRows[j2];
+    bump(stageCounts.bp,rA.f.basing_plateau?rA.f.basing_plateau.stage:"");
+    bump(stageCounts.pb,rA.f.probing_bet?rA.f.probing_bet.stage:"");
+    bump(stageCounts.vcp,rA.f.vcp?rA.f.vcp.stage:"");
+    bump(stageCounts.mm99,rA.f.mm99?rA.f.mm99.stage:"");
+    bump(stageCounts.utr,rA.f.uptrend_retest?rA.f.uptrend_retest.stage:"");
+    // Pass 2 placeholders: col/s3/s4 stay at 0 until Collapse/S3/S4 logic lands.
+    var gA2=timeliness(rA);
+    if(gA2==="A")gA++;else if(gA2==="B")gB++;else if(gA2==="C")gC++;
+    else if(gA2==="D")gD++;else if(gA2==="F")gF++;else gN++;
+  }
+  var totalDen=allRows.length;
+  function gridCell(n){return'<td class="combo-grid-cell">'+(n>0?n+'<span class="combo-grid-den"> / '+totalDen+'</span>':'<span class="combo-grid-zero">&mdash;</span>')+'</td>'}
+  function gridRow(label,key,note){
+    var pendingCls=(key==="col"||key==="s3"||key==="s4")?" combo-grid-row-pending":"";
+    return'<tr class="'+pendingCls+'"><th class="combo-grid-rowlabel">'+label+(note?' <span class="combo-grid-note">'+note+'</span>':'')+'</th>'
+      +gridCell(stageCounts[key].e)+gridCell(stageCounts[key].l)+gridCell(stageCounts[key].c)+'</tr>';
+  }
+  var gridHtml=''
+    +'<table class="combo-grid"><thead><tr>'
+    +'<th class="combo-grid-corner">FILTER</th>'
+    +'<th class="combo-grid-colhdr">EARLY</th>'
+    +'<th class="combo-grid-colhdr">LATE</th>'
+    +'<th class="combo-grid-colhdr">CAPITAL</th>'
+    +'</tr></thead><tbody>'
+    +gridRow("Collapse","col","P2")
+    +gridRow("Basing Plateau","bp","")
+    +gridRow("Probing Bet","pb","")
+    +gridRow("VCP","vcp","")
+    +gridRow("Stage 3 Topping","s3","P2")
+    +gridRow("Stage 4 Declining","s4","P2")
+    +gridRow("MM 99","mm99","")
+    +gridRow("Uptrend Retest","utr","")
+    +'</tbody></table>';
+  function gradePill(letter,n){
+    var clsKey=letter==="-"?"N":letter;
+    return'<div class="combo-grade-row"><span class="tm-grade tm-'+clsKey+'">'+(letter==="-"?"&mdash;":letter)+'</span>'
+      +'<span class="combo-grade-count">'+n+'</span><span class="combo-grade-den"> / '+totalDen+'</span></div>';
+  }
+  var gradeHtml=''
+    +'<div class="combo-grade-block"><div class="combo-grade-title">TIMELINESS GRADE DISTRIBUTION</div>'
+    +gradePill("A",gA)+gradePill("B",gB)+gradePill("C",gC)
+    +gradePill("D",gD)+gradePill("F",gF)+gradePill("-",gN)
+    +'<div class="combo-grade-foot">Shown after toggles: '+xyFmt(rows.length,totalDen)+'</div></div>';
+  var h='<div class="summary-tile" id="section-summary"><h3>TIMELINESS &mdash; Decision Lens</h3>'
+    +'<div class="sub">Per-stock A/B/C/D/F grade collapsing 8 setup filters via priority ladder. Header toggles slice by stage &times; setup (AND). Grid below shows full-universe stage counts (cumulative — stocks reaching at least that stage). Distribution panel shows grade frequency.</div>'
+    +'<div class="combo-summary-grid">'
+    +'<div class="combo-summary-left">'+gridHtml+'</div>'
+    +'<div class="combo-summary-right">'+gradeHtml+'</div>'
     +'</div></div>';
 
   h+=buildPortfolioTile(currentTab);
   rows=applyIndSecFilter(rows);
   h+='<h3 class="qualified-title" id="section-stocks">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</h3>';
   h+='<div class="data-table-wrap"><table class="data-table"><thead><tr>';
-  // Column order (left-to-right per D-MD-FILTER-8 final order): common | TIMELINESS | Collapse(P2) | BP | PB | VCP | S3(P2) | S4(P2) | MM99 | UTR | ratings
-  // Pass 1: only existing 5 filter columns rendered.
+  // SESSION 9 Pass 1.1: Final col order per D-MD-FILTER-8: TIMELINESS | Collapse | BP | PB | VCP | S3 Top | S4 Dec | MM99 | UTR.
+  // Collapse/S3/S4 are Pass 2 placeholders — render — badge with title tooltip until Pass 2 lands.
   h+=commonCols()
     +th("Timeliness","tm_key","col-txt col-filter")
+    +th("Collapse","_collapse_stage","col-txt col-filter combo-col-pending")
     +th("Basing Plateau","bp_stage","col-txt col-filter")
     +th("Probing Bet","pb_stage","col-txt col-filter")
     +th("VCP","vcp_stage","col-txt col-filter")
+    +th("S3 Topping","_s3_stage","col-txt col-filter combo-col-pending")
+    +th("S4 Declining","_s4_stage","col-txt col-filter combo-col-pending")
     +th("MM 99","mm_stage","col-txt col-filter")
     +th("Uptrend Retest","utr_stage","col-txt col-filter")
     +ratingsColHeaders();
   h+='</tr></thead><tbody>';
+  var pendBadge='<span class="badge badge-fail" title="Pass 2 — pending">&mdash;</span>';
   for(var j=0;j<rows.length;j++){
     var r=rows[j];
     h+='<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+commonTds(r)
       +'<td class="col-txt col-filter">'+timelinessBadge(r.tm_grade)+'</td>'
+      +'<td class="col-txt col-filter combo-col-pending">'+pendBadge+'</td>'
       +'<td class="col-txt col-filter">'+badge(r.bp_stage)+'</td>'
       +'<td class="col-txt col-filter">'+badge(r.pb_stage)+'</td>'
       +'<td class="col-txt col-filter">'+badge(r.vcp_stage)+'</td>'
+      +'<td class="col-txt col-filter combo-col-pending">'+pendBadge+'</td>'
+      +'<td class="col-txt col-filter combo-col-pending">'+pendBadge+'</td>'
       +'<td class="col-txt col-filter">'+badge(r.mm_stage)+'</td>'
       +'<td class="col-txt col-filter">'+badge(r.utr_stage)+'</td>'
       +ratingsColTds(r)+'</tr>';
