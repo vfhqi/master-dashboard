@@ -210,30 +210,40 @@ def main():
         data = None
         source = "sample"
 
-        # Always try pullback cache first (has real data from prior yfinance runs)
-        cached = try_pullback_cache(ticker, yf_ticker)
-        if cached and len(cached) > 100:
-            data = cached
-            source = "pullback cache"
-
-        if data is None and live_mode:
-            # Try yfinance
+        # SESSION 12 fix: in --live mode, try yfinance FIRST (fresh data), fall back to pullback cache.
+        # In sandbox mode (no --live), use pullback cache first as before.
+        if live_mode:
+            # Try yfinance live (fresh data)
             try:
                 import yfinance as yf
                 tk = yf.Ticker(yf_ticker)
                 hist = tk.history(period="5y")
-                records = []
-                for idx, row in hist.iterrows():
-                    records.append({
-                        "Date": idx.strftime("%Y-%m-%d"),
-                        "Open": row["Open"], "High": row["High"],
-                        "Low": row["Low"], "Close": row["Close"],
-                        "Volume": int(row["Volume"])
-                    })
-                data = convert_yfinance_cache(records)
-                source = "yfinance"
+                if len(hist) > 100:
+                    records = []
+                    for idx, row in hist.iterrows():
+                        records.append({
+                            "Date": idx.strftime("%Y-%m-%d"),
+                            "Open": row["Open"], "High": row["High"],
+                            "Low": row["Low"], "Close": row["Close"],
+                            "Volume": int(row["Volume"])
+                        })
+                    data = convert_yfinance_cache(records)
+                    source = "yfinance live"
             except Exception as e:
-                print(f"  {ticker}: yfinance failed ({e}), using sample")
+                print(f"  {ticker}: yfinance failed ({e}), trying cache")
+
+            # Fallback: pullback cache
+            if data is None:
+                cached = try_pullback_cache(ticker, yf_ticker)
+                if cached and len(cached) > 100:
+                    data = cached
+                    source = "pullback cache (yfinance fallback)"
+        else:
+            # Sandbox mode: cache first, no yfinance
+            cached = try_pullback_cache(ticker, yf_ticker)
+            if cached and len(cached) > 100:
+                data = cached
+                source = "pullback cache"
 
         if data is None:
             data = generate_sample_data(ticker)
