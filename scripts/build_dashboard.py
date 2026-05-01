@@ -409,20 +409,31 @@ th.utr-l-first,th.utr-l-last{border-top:2px solid rgba(230,100,0,0.30)}
 .utr-c-first{border-left:2px solid rgba(46,125,50,0.30)}
 .utr-c-last{border-right:2px solid rgba(46,125,50,0.30)}
 th.utr-c-first,th.utr-c-last{border-top:2px solid rgba(46,125,50,0.30)}
-/* SESSION 11 — D-MD-SSEM-1..4: SS Earnings Momentum tab additions */
-/* Rating pill — visually prominent, A-F coloured */
-.ssem-rating-pill{display:inline-block;padding:3px 10px;border-radius:6px;font-weight:700;font-size:12px;letter-spacing:.5px;min-width:22px;text-align:center;border:1px solid rgba(0,0,0,0.1);box-shadow:0 1px 2px rgba(0,0,0,0.05)}
-.ssem-rating-A{background:#0d3817;color:#fff}
-.ssem-rating-B{background:#2e7d32;color:#fff}
-.ssem-rating-C{background:#f2e1a5;color:#5a4a00}
-.ssem-rating-D{background:#ffe0b2;color:#7a3d00}
-.ssem-rating-F{background:#c62828;color:#fff}
-.ssem-rating-N{background:#eee;color:#888}
-/* Score column emphasis */
+/* SESSION 11 — D-MD-SSEM-1..4 + SESSION 12 polish (D-MD-SSEM-5..7) */
+/* Rating pill — palette canonicalised to D-MD-UI-2 / Ratings Dashboard (rgb values from live IC ratings dashboard) */
+.ssem-rating-pill{display:inline-block;padding:4px 8px;border-radius:3px;font-weight:700;font-size:11px;text-align:center;min-width:28px;white-space:nowrap}
+.ssem-rating-A{background:rgb(27,94,32);color:rgb(165,214,167)}
+.ssem-rating-B{background:rgb(46,125,50);color:rgb(200,230,201)}
+.ssem-rating-C{background:rgb(141,110,0);color:rgb(242,225,165)}
+.ssem-rating-D{background:rgb(230,81,0);color:rgb(242,225,165)}
+.ssem-rating-F{background:rgb(183,28,28);color:rgb(239,154,154)}
+.ssem-rating-N{background:rgb(232,227,212);color:rgb(154,147,128)}
+/* Score column — rating-keyed colour (D-MD-SSEM-6): A/B green, C neutral, D/F red */
 .ssem-score-cell{font-weight:700;font-size:13px;text-align:right}
-.ssem-score-pos{color:#2e7d32}
-.ssem-score-neg{color:#c62828}
-.ssem-score-zero{color:#888}
+.ssem-score-rA{color:#1b5e20}
+.ssem-score-rB{color:#2e7d32}
+.ssem-score-rC{color:#333333}
+.ssem-score-rD{color:#e65100}
+.ssem-score-rF{color:#b71c1c}
+.ssem-score-rN{color:#999}
+/* Cell background heatmap (D-MD-SSEM-3): subtle green/neutral/red bg by % value sign+magnitude */
+.ssem-cell-pos-strong{background:rgba(46,125,50,0.18)}
+.ssem-cell-pos-mid{background:rgba(46,125,50,0.10)}
+.ssem-cell-pos-weak{background:rgba(46,125,50,0.04)}
+.ssem-cell-neutral{background:transparent}
+.ssem-cell-neg-weak{background:rgba(198,40,40,0.04)}
+.ssem-cell-neg-mid{background:rgba(198,40,40,0.10)}
+.ssem-cell-neg-strong{background:rgba(198,40,40,0.18)}
 /* Trend arrows on tile cells */
 .ssem-trend-up{color:#2e7d32;font-weight:700}
 .ssem-trend-flat{color:#888;font-weight:400}
@@ -436,12 +447,17 @@ th.utr-c-first,th.utr-c-last{border-top:2px solid rgba(46,125,50,0.30)}
 .ssem-filter-divider{width:1px;height:18px;background:var(--border);margin:0 6px}
 .ssem-filter-btn{padding:3px 9px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--text-dim);border-radius:4px;cursor:pointer;letter-spacing:.3px}
 .ssem-filter-btn.active{background:#1b3d5c;color:#fff;border-color:#1b3d5c}
-.ssem-rating-btn-A.active{background:#0d3817;border-color:#0d3817}
-.ssem-rating-btn-B.active{background:#2e7d32;border-color:#2e7d32}
-.ssem-rating-btn-C.active{background:#f2e1a5;color:#5a4a00;border-color:#d4c080}
-.ssem-rating-btn-D.active{background:#ffe0b2;color:#7a3d00;border-color:#e6c590}
-.ssem-rating-btn-F.active{background:#c62828;border-color:#c62828}
-.ssem-rating-btn-N.active{background:#888;border-color:#888;color:#fff}
+.ssem-rating-btn-A.active{background:rgb(27,94,32);border-color:rgb(27,94,32);color:rgb(165,214,167)}
+.ssem-rating-btn-B.active{background:rgb(46,125,50);border-color:rgb(46,125,50);color:rgb(200,230,201)}
+.ssem-rating-btn-C.active{background:rgb(141,110,0);border-color:rgb(141,110,0);color:rgb(242,225,165)}
+.ssem-rating-btn-D.active{background:rgb(230,81,0);border-color:rgb(230,81,0);color:rgb(242,225,165)}
+.ssem-rating-btn-F.active{background:rgb(183,28,28);border-color:rgb(183,28,28);color:rgb(239,154,154)}
+.ssem-rating-btn-N.active{background:rgb(232,227,212);border-color:rgb(232,227,212);color:rgb(154,147,128)}
+/* SESSION 12 — TYPE/TIME and Cumulative/Per-period toggle row (lives in #3 TOGGLES area) */
+.ssem-mode-toggle-row{display:inline-flex;gap:4px;align-items:center;margin-right:6px}
+.ssem-mode-btn{padding:3px 8px;font-size:10px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--text-dim);border-radius:4px;cursor:pointer;letter-spacing:.3px}
+.ssem-mode-btn.active{background:#1b3d5c;color:#fff;border-color:#1b3d5c}
+.ssem-mode-label{font-size:10px;color:var(--text-dim);margin-right:4px}
 
 /* UTR key description row above headers — SESSION 10: sticky <thead> handles vertical stacking, no per-row top needed */
 .utr-key-row td,.gen-key-row td{font-size:9px;color:#8b8680;font-weight:400;font-style:italic;text-align:center;padding:2px 4px;white-space:normal;line-height:1.2;vertical-align:bottom;border-bottom:none;max-width:80px;overflow:hidden;text-overflow:ellipsis;z-index:5;background:#f7f5ef}
@@ -1597,6 +1613,36 @@ function buildPortfolioTile(tabId){
         +'<td class="col-txt col-filter">'+badge(rk.utr_stage)+'</td>'
         +ratingsColTds(rk)+'</tr>';
     }
+  } else if(tabId==="ssem"){
+    // SESSION 12 D-MD-SSEM-7: LP table mirrors QS table on SSEM tab.
+    // Enrich each LP row with SSEM data + score + rating.
+    for(var jE=0;jE<posRows.length;jE++){
+      var rE=posRows[jE];
+      var ss=D.ssem ? D.ssem[rE.ticker] : null;
+      if(ss){
+        rE.eps_1m=ss.eps_rev?ss.eps_rev.L1M:null;rE.eps_3m=ss.eps_rev?ss.eps_rev.L3M:null;
+        rE.eps_6m=ss.eps_rev?ss.eps_rev.L6M:null;rE.eps_12m=ss.eps_rev?ss.eps_rev.L12M:null;
+        rE.ebitda_1m=ss.ebitda_rev?ss.ebitda_rev.L1M:null;rE.ebitda_3m=ss.ebitda_rev?ss.ebitda_rev.L3M:null;
+        rE.ebitda_6m=ss.ebitda_rev?ss.ebitda_rev.L6M:null;rE.ebitda_12m=ss.ebitda_rev?ss.ebitda_rev.L12M:null;
+        rE.sales_1m=ss.sales_rev?ss.sales_rev.L1M:null;rE.sales_3m=ss.sales_rev?ss.sales_rev.L3M:null;
+        rE.sales_6m=ss.sales_rev?ss.sales_rev.L6M:null;rE.sales_12m=ss.sales_rev?ss.sales_rev.L12M:null;
+        rE.tp_1m=ss.tp_rev?ss.tp_rev.L1M:null;rE.tp_3m=ss.tp_rev?ss.tp_rev.L3M:null;
+        rE.tp_6m=ss.tp_rev?ss.tp_rev.L6M:null;rE.tp_12m=ss.tp_rev?ss.tp_rev.L12M:null;
+        rE.buy_1m=ss.buy_rev?ss.buy_rev.L1M:null;rE.buy_3m=ss.buy_rev?ss.buy_rev.L3M:null;
+        rE.buy_6m=ss.buy_rev?ss.buy_rev.L6M:null;rE.buy_12m=ss.buy_rev?ss.buy_rev.L12M:null;
+        rE.buy_pct=ss.buy_pct;
+        ssemEnrichRow(rE);
+        // Look up rating from the full-universe bell-curve computed in renderSSEM.
+        rE.ssem_rating = ssemRatingMap[rE.ticker] || "-";
+      } else {
+        rE.ssem_score=0; rE.ssem_rating="-"; rE.ssem_nulls=15;
+      }
+    }
+    // Use ssemRowHTML helper (defined inside renderSSEM scope — duplicate inline to keep buildPortfolioTile self-contained)
+    h+=ssemHeadersHTML()+'<tbody>';
+    for(var jr2=0;jr2<posRows.length;jr2++){
+      h+=ssemRowHTML(posRows[jr2]);
+    }
   } else {
     // Other tabs: keep existing behaviour (commonCols + ratings).
     h+=commonCols()+ratingsColHeaders()+'</tr></thead><tbody>';
@@ -2707,8 +2753,43 @@ function renderPositions(){
 // SS EARNINGS MOMENTUM — Session 11 helpers (D-MD-SSEM-1..4)
 // ================================================================
 // Filter state — sticky across tab switches per D-MD-UI-7 pattern.
+// SESSION 12 — D-MD-SSEM-5/6/7: column-order mode (TYPE=dim-grouped, TIME=timeframe-grouped) + value mode (CUMUL=raw FactSet, PERIOD=net-of-prior).
+var ssemRatingMap = {};   // ticker -> A/B/C/D/F/- — populated by renderSSEM, read by buildPortfolioTile
+var ssemColMode = "TYPE";       // "TYPE" or "TIME"
+var ssemValueMode = "CUMUL";    // "CUMUL" or "PERIOD"
 var ssemDimFilters = {eps: true, ebitda: true, sales: true, tp: true, buy: true};
 var ssemRatingFilters = {A: true, B: true, C: true, D: true, F: true, N: true};
+
+// SESSION 12 — D-MD-SSEM-5..7 helpers
+// Returns the value to DISPLAY in a cell based on ssemValueMode toggle.
+// CUMUL mode: raw FactSet value (cumulative). PERIOD mode: net-of-prior-period (matches scoring math).
+// L1M is identical in both modes (no prior to subtract).
+function ssemDisplayValue(L1M, L3M, L6M, L12M, timeframe) {
+  if (ssemValueMode === "CUMUL") {
+    if (timeframe === "L1M") return L1M;
+    if (timeframe === "L3M") return L3M;
+    if (timeframe === "L6M") return L6M;
+    if (timeframe === "L12M") return L12M;
+  } else { // PERIOD mode
+    if (timeframe === "L1M") return L1M;
+    if (timeframe === "L3M") return (L3M == null || L1M == null) ? null : (L3M - L1M);
+    if (timeframe === "L6M") return (L6M == null || L3M == null) ? null : (L6M - L3M);
+    if (timeframe === "L12M") return (L12M == null || L6M == null) ? null : (L12M - L6M);
+  }
+  return null;
+}
+
+// Cell heatmap class — subtle green/neutral/red bg by % value sign+magnitude. Thresholds: ±1pp = weak, ±5pp = mid, ±10pp = strong.
+function ssemHeatClass(v) {
+  if (v == null) return "ssem-cell-neutral";
+  if (v >= 10) return "ssem-cell-pos-strong";
+  if (v >= 5) return "ssem-cell-pos-mid";
+  if (v >= 1) return "ssem-cell-pos-weak";
+  if (v <= -10) return "ssem-cell-neg-strong";
+  if (v <= -5) return "ssem-cell-neg-mid";
+  if (v <= -1) return "ssem-cell-neg-weak";
+  return "ssem-cell-neutral";
+}
 
 // Sub-score for one dimension using net-off logic.
 // Net-off: L1M test = raw L1M, L3M test = (L3M - L1M), L6M test = (L6M - L3M).
@@ -2886,7 +2967,7 @@ function buildSsemIndSecTables(rows) {
         var avgL6M = ssemMean(m[dk + "_l6m"]);
         var stdevL3M = ssemStdev(m[dk + "_l3m"]);
         var avgStr = (avgL3M == null) ? "&mdash;" : (avgL3M >= 0 ? "+" : "") + avgL3M.toFixed(1) + "%";
-        h += '<td class="ssem-tile-cell">' + avgStr + '</td>';
+        h += '<td class="ssem-tile-cell ' + ssemHeatClass(avgL3M) + '">' + avgStr + '</td>';
         h += '<td class="ssem-tile-glyph">' + ssemTrendArrow(avgL1M, avgL6M) + " " + ssemSkewGlyph(stdevL3M) + '</td>';
       }
       h += '</tr>';
@@ -2900,21 +2981,34 @@ function buildSsemIndSecTables(rows) {
 // Setters for SSEM filter toggles
 window.toggleSsemDim = function(dim) { ssemDimFilters[dim] = !ssemDimFilters[dim]; renderTab("ssem"); };
 window.toggleSsemRating = function(rating) { ssemRatingFilters[rating] = !ssemRatingFilters[rating]; renderTab("ssem"); };
+window.setSsemColMode = function(mode) { ssemColMode = mode; renderTab("ssem"); };
+window.setSsemValueMode = function(mode) { ssemValueMode = mode; renderTab("ssem"); };
 
-// SSEM-specific header controls (5 dim toggles + 6 rating toggles)
+// SSEM-specific header controls — Session 12: includes 2 mode toggles on the left + 5 dim toggles + 6 rating toggles
 // Targets header-tab-controls DIV (the #4 FILTERS panel) — same target as combos/MM99 dispatch.
+// Per Q6 (Richard 01-May-26 Session 12): mode toggles "in #3 TOGGLES group ATM, on left of HEADER bar" — pragmatically render them on the LEFT of the same row.
 function buildSsemHeaderControls() {
   var ctrls = document.getElementById("header-tab-controls");
   if (!ctrls) return;
   var h = '<div class="ssem-filter-row">';
-  h += '<span style="font-size:10px;color:var(--text-dim);margin-right:4px">DIMS:</span>';
+  // Mode toggles — leftmost
+  h += '<span class="ssem-mode-label">VIEW:</span>';
+  h += '<button class="ssem-mode-btn' + (ssemColMode === "TYPE" ? " active" : "") + '" onclick="setSsemColMode(\'TYPE\')" title="Group columns by dimension type (EPS, EBITDA, Sales, TP, Buy)">By type</button>';
+  h += '<button class="ssem-mode-btn' + (ssemColMode === "TIME" ? " active" : "") + '" onclick="setSsemColMode(\'TIME\')" title="Group columns by timeframe (L1M, L3M, L6M, L12M)">By time</button>';
+  h += '<span class="ssem-filter-divider"></span>';
+  h += '<span class="ssem-mode-label">VALUES:</span>';
+  h += '<button class="ssem-mode-btn' + (ssemValueMode === "CUMUL" ? " active" : "") + '" onclick="setSsemValueMode(\'CUMUL\')" title="Show cumulative (raw FactSet) revisions">Cumulative</button>';
+  h += '<button class="ssem-mode-btn' + (ssemValueMode === "PERIOD" ? " active" : "") + '" onclick="setSsemValueMode(\'PERIOD\')" title="Show per-period (net-of-prior) revisions — matches the scoring math">Per-period</button>';
+  h += '<span class="ssem-filter-divider"></span>';
+  // Existing dim + rating filters
+  h += '<span class="ssem-mode-label">DIMS:</span>';
   var dims = [{k: "eps", l: "EPS"}, {k: "ebitda", l: "EBITDA"}, {k: "sales", l: "Sales"}, {k: "tp", l: "TP"}, {k: "buy", l: "Buy"}];
   for (var d = 0; d < dims.length; d++) {
     var active = ssemDimFilters[dims[d].k] ? " active" : "";
     h += '<button class="ssem-filter-btn' + active + '" onclick="toggleSsemDim(\'' + dims[d].k + '\')" title="Filter to stocks where ' + dims[d].l + ' net L3M score is positive">' + dims[d].l + '</button>';
   }
   h += '<span class="ssem-filter-divider"></span>';
-  h += '<span style="font-size:10px;color:var(--text-dim);margin-right:4px">RATING:</span>';
+  h += '<span class="ssem-mode-label">RATING:</span>';
   var ratings = [{k: "A", l: "A"}, {k: "B", l: "B"}, {k: "C", l: "C"}, {k: "D", l: "D"}, {k: "F", l: "F"}, {k: "N", l: "&mdash;"}];
   for (var rr = 0; rr < ratings.length; rr++) {
     var ractive = ssemRatingFilters[ratings[rr].k] ? " active" : "";
@@ -2922,6 +3016,117 @@ function buildSsemHeaderControls() {
   }
   h += '</div>';
   ctrls.innerHTML = h;
+}
+
+// SESSION 12 — D-MD-SSEM-5..7: shared header + row helpers, used by renderSSEM AND buildPortfolioTile (SSEM branch).
+// Defined OUTSIDE renderSSEM so buildPortfolioTile can call them. Reads ssemColMode + ssemValueMode for branch logic.
+var SSEM_DIMS = [
+  {k:"eps",     l:"EPS",    grpCls:"grp-eps",    grpBg:"rgba(50,150,50,0.08)"},
+  {k:"ebitda",  l:"EBITDA", grpCls:"grp-ebitda", grpBg:"rgba(50,100,200,0.08)"},
+  {k:"sales",   l:"Sales",  grpCls:"grp-sales",  grpBg:"rgba(200,150,0,0.08)"},
+  {k:"tp",      l:"TP",     grpCls:"grp-tp",     grpBg:"rgba(120,80,200,0.08)"},
+  {k:"buy",     l:"Buy",    grpCls:"grp-buy",    grpBg:"rgba(200,50,50,0.08)"}
+];
+var SSEM_TIMES = [
+  {k:"L1M",  l:"1M",  bg:"rgba(50,100,200,0.08)"},
+  {k:"L3M",  l:"3M",  bg:"rgba(50,150,50,0.08)"},
+  {k:"L6M",  l:"6M",  bg:"rgba(200,150,0,0.08)"},
+  {k:"L12M", l:"12M", bg:"rgba(120,80,200,0.08)"}
+];
+
+// Returns the raw value from a row for (dim, timeframe).
+function ssemRowVal(r, dimKey, tfKey) {
+  var key = dimKey + "_" + (tfKey === "L1M" ? "1m" : tfKey === "L3M" ? "3m" : tfKey === "L6M" ? "6m" : "12m");
+  return r[key];
+}
+
+// Build the thead HTML for the SSEM table (mode-aware). Returns full <thead>...</thead> block.
+function ssemHeadersHTML() {
+  var h = '<thead>';
+  h += '<tr class="group-header-row">';
+  h += '<th colspan="3"></th>';
+  if (ssemColMode === "TYPE") {
+    // 5 groups of 4 timeframes each = 20 cols
+    for (var d = 0; d < SSEM_DIMS.length; d++) {
+      h += '<th colspan="4" style="background:' + SSEM_DIMS[d].grpBg + '">' + SSEM_DIMS[d].l + ' Revisions</th>';
+    }
+  } else {
+    // 4 timeframe groups of 5 dims each = 20 cols
+    for (var t = 0; t < SSEM_TIMES.length; t++) {
+      h += '<th colspan="5" style="background:' + SSEM_TIMES[t].bg + '">' + SSEM_TIMES[t].l + (SSEM_TIMES[t].k === "L12M" ? ' (ref)' : '') + '</th>';
+    }
+  }
+  h += '<th colspan="2" style="background:rgba(27,61,92,0.10)">SSEM Score</th>';
+  h += '</tr>';
+  h += '<tr class="col-header-row">';
+  h += th("Ticker","_display_name","col-txt col-identity","Stock ticker","width:120px")
+    + th("Sector","_tax_sector","col-txt col-identity","Sector","width:200px")
+    + th("Price","price","col-num col-price","Current price","width:52px");
+  if (ssemColMode === "TYPE") {
+    for (var d2 = 0; d2 < SSEM_DIMS.length; d2++) {
+      var dm = SSEM_DIMS[d2];
+      for (var t2 = 0; t2 < SSEM_TIMES.length; t2++) {
+        var tm = SSEM_TIMES[t2];
+        var firstLast = (t2 === 0 ? " " + dm.grpCls + "-first" : (t2 === SSEM_TIMES.length-1 ? " " + dm.grpCls + "-last" : ""));
+        var sortKey = dm.k + "_" + (tm.k === "L1M" ? "1m" : tm.k === "L3M" ? "3m" : tm.k === "L6M" ? "6m" : "12m");
+        h += th(dm.l + " " + tm.l, sortKey, "col-num col-filter" + firstLast, dm.l + " revision % " + tm.k + (tm.k === "L12M" ? " (reference only — not scored)" : ""));
+      }
+    }
+  } else {
+    // TIME mode: 4 timeframe groups
+    for (var t3 = 0; t3 < SSEM_TIMES.length; t3++) {
+      var tm3 = SSEM_TIMES[t3];
+      for (var d3 = 0; d3 < SSEM_DIMS.length; d3++) {
+        var dm3 = SSEM_DIMS[d3];
+        var firstLast3 = (d3 === 0 ? " grp-tp-first" : (d3 === SSEM_DIMS.length-1 ? " grp-tp-last" : ""));
+        var sortKey3 = dm3.k + "_" + (tm3.k === "L1M" ? "1m" : tm3.k === "L3M" ? "3m" : tm3.k === "L6M" ? "6m" : "12m");
+        h += th(dm3.l, sortKey3, "col-num col-filter" + firstLast3, dm3.l + " " + tm3.k + " revision %");
+      }
+    }
+  }
+  h += th("Score","ssem_score","col-num","Total SSEM score (-15 to +15) using net-off logic across 15 tests");
+  h += th("Rating","ssem_rating_sort","col-txt","A-F rating via bell-curve over SSEM universe (10/15/25/25/25)");
+  h += '</tr></thead>';
+  return h;
+}
+
+// Build the row HTML for one SSEM row (mode-aware).
+function ssemRowHTML(r) {
+  var tax = getTaxonomy(r.ticker);
+  var dn = (displayMode === "company") ? (r.company || r.ticker) : r.ticker;
+  var h = '<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">';
+  h += '<td class="col-txt col-identity" style="font-weight:600;color:var(--text-bright)">' + dn + '</td>';
+  h += '<td class="col-txt col-identity" style="font-size:11px">' + tax.sector + '</td>';
+  h += '<td class="col-num col-price">' + fp(r.price) + '</td>';
+  if (ssemColMode === "TYPE") {
+    for (var d = 0; d < SSEM_DIMS.length; d++) {
+      var dm = SSEM_DIMS[d];
+      for (var t = 0; t < SSEM_TIMES.length; t++) {
+        var tm = SSEM_TIMES[t];
+        var firstLast = (t === 0 ? " " + dm.grpCls + "-first" : (t === SSEM_TIMES.length-1 ? " " + dm.grpCls + "-last" : ""));
+        var rawVals = [ssemRowVal(r, dm.k, "L1M"), ssemRowVal(r, dm.k, "L3M"), ssemRowVal(r, dm.k, "L6M"), ssemRowVal(r, dm.k, "L12M")];
+        var v = ssemDisplayValue(rawVals[0], rawVals[1], rawVals[2], rawVals[3], tm.k);
+        h += '<td class="col-num col-filter' + firstLast + ' ' + ssemHeatClass(v) + '">' + fpcRaw(v) + '</td>';
+      }
+    }
+  } else {
+    for (var t2 = 0; t2 < SSEM_TIMES.length; t2++) {
+      var tm2 = SSEM_TIMES[t2];
+      for (var d2 = 0; d2 < SSEM_DIMS.length; d2++) {
+        var dm2 = SSEM_DIMS[d2];
+        var firstLast2 = (d2 === 0 ? " grp-tp-first" : (d2 === SSEM_DIMS.length-1 ? " grp-tp-last" : ""));
+        var rawVals2 = [ssemRowVal(r, dm2.k, "L1M"), ssemRowVal(r, dm2.k, "L3M"), ssemRowVal(r, dm2.k, "L6M"), ssemRowVal(r, dm2.k, "L12M")];
+        var v2 = ssemDisplayValue(rawVals2[0], rawVals2[1], rawVals2[2], rawVals2[3], tm2.k);
+        h += '<td class="col-num col-filter' + firstLast2 + ' ' + ssemHeatClass(v2) + '">' + fpcRaw(v2) + '</td>';
+      }
+    }
+  }
+  // Score — rating-keyed colour (D-MD-SSEM-6)
+  var ratingKey = (r.ssem_rating === "-") ? "N" : r.ssem_rating;
+  h += '<td class="ssem-score-cell ssem-score-r' + ratingKey + '">' + (r.ssem_score > 0 ? "+" : "") + r.ssem_score + '</td>';
+  h += '<td style="text-align:center">' + ssemRatingPill(r.ssem_rating) + '</td>';
+  h += '</tr>';
+  return h;
 }
 
 function renderSSEM(){
@@ -2949,21 +3154,19 @@ function renderSSEM(){
     r.buy_6m=ss.buy_rev?ss.buy_rev.L6M:null;r.buy_12m=ss.buy_rev?ss.buy_rev.L12M:null;
     r.buy_pct=ss.buy_pct;
     r.momentum=ss.momentum!=null?ss.momentum:null;
-    // Compute SSEM score + per-dim sub-scores via net-off logic.
     ssemEnrichRow(r);
     rowsAll.push(r);
   }
-  // Bell-curve rating distribution: 10/15/25/25/25 over eligible (>=3 nulls => "-").
   ssemAssignRatings(rowsAll);
-  // Apply header filters: dim toggles (AND on net L3M positive) + rating toggles.
-  // Dim semantics: a dim toggle ON means "show stocks where dim_net_l3m > 0". AND across active dims (intersection).
-  // If all dim toggles OFF: show all (no constraint). Same idea as TIMELINESS toggles.
+  // Populate global ticker->rating lookup so buildPortfolioTile (LP branch) shows the same rating.
+  ssemRatingMap = {};
+  for(var rk=0;rk<rowsAll.length;rk++){ssemRatingMap[rowsAll[rk].ticker]=rowsAll[rk].ssem_rating;}
+  // Apply header filters
   var rows=[];
   for(var rj=0;rj<rowsAll.length;rj++){
     var rr=rowsAll[rj];
     var ratingKey=rr.ssem_rating==="-"?"N":rr.ssem_rating;
     if(!ssemRatingFilters[ratingKey])continue;
-    // Dim filter: AND semantics — if a dim is ON, stock must be positive on that dim's net L3M.
     var dimOK=true;
     var anyDimOn=false;
     var dims=["eps","ebitda","sales","tp","buy"];
@@ -2973,7 +3176,6 @@ function renderSSEM(){
         if(!(rr["ssem_l3m_net_"+dims[dx]]>0)){dimOK=false;break}
       }
     }
-    // If no dims on, show all (don't filter on dims).
     if(anyDimOn && !dimOK)continue;
     rows.push(rr);
   }
@@ -2992,71 +3194,18 @@ function renderSSEM(){
     else if(g==="D")distD++;else if(g==="F")distF++;else distN++;
   }
   var h='<div class="summary-tile" id="section-summary"><h3>SS Earnings Momentum &mdash; Decision Lens</h3>'
-    +'<div class="sub">15-test net-of-prior-period scoring across 5 dimensions (EPS, EBITDA, Sales, TP, Buy) x 3 timeframes (L1M, L3M-net, L6M-net). Score range -15 to +15. A-F bell-curve distribution across the SSEM-covered universe (10/15/25/25/25). L12M shown for visual reference only (not scored). D-MD-SSEM-1..4.</div>'
+    +'<div class="sub">15-test net-of-prior-period scoring across 5 dimensions (EPS, EBITDA, Sales, TP, Buy) x 3 timeframes (L1M, L3M-net, L6M-net). Score range -15 to +15. A-F bell-curve distribution across the SSEM-covered universe (10/15/25/25/25). L12M shown for visual reference only (not scored). Use VIEW toggle to switch column grouping (TYPE/TIME); use VALUES toggle to switch between cumulative (raw) and per-period (net) revisions.</div>'
     +'<div class="summary-stats">'
     +sumStat("Stocks",xyFmt(rowsAll.length,totalCount))
     +sumStat("A",distA,"green")+sumStat("B",distB,"green")+sumStat("C",distC,"amber")+sumStat("D",distD,"amber")+sumStat("F",distF,"red")+sumStat("&mdash;",distN)
     +'</div></div>';
-  // Industry/Sector tiles — enriched per Session 11.
   h+=buildSsemIndSecTables(rowsAll);
-  // Live Portfolio (separate table, mirrors UTR/TIMELINESS pattern).
   h+=buildPortfolioTile(currentTab);
-  // Apply ind/sec filter to qualified stocks list.
   rows=applyIndSecFilter(rows);
   h+='<h3 class="qualified-title" id="section-stocks">Qualified Stocks ('+xyFmt(rows.length,totalCount)+')</h3>';
-  h+='<div class="data-table-wrap"><table class="data-table"><thead>';
-  h+='<tr class="group-header-row">';
-  h+='<th colspan="3"></th>';
-  h+='<th colspan="4" style="background:rgba(50,150,50,0.08)">EPS Revisions</th>';
-  h+='<th colspan="4" style="background:rgba(50,100,200,0.08)">EBITDA Revisions</th>';
-  h+='<th colspan="4" style="background:rgba(200,150,0,0.08)">Sales Revisions</th>';
-  h+='<th colspan="4" style="background:rgba(120,80,200,0.08)">Target Price</th>';
-  h+='<th colspan="2" style="background:rgba(200,50,50,0.08)">Buy Rating</th>';
-  h+='<th colspan="2" style="background:rgba(27,61,92,0.10)">SSEM Score</th>';
-  h+='</tr>';
-  h+='<tr class="col-header-row">';
-  h+=th("Ticker","_display_name","col-txt col-identity","Stock ticker","width:120px")
-    +th("Sector","_tax_sector","col-txt col-identity","Sector","width:200px")
-    +th("Price","price","col-num col-price","Current price","width:52px")
-    +th("EPS 1M","eps_1m","col-num col-filter grp-eps-first","EPS revision % L1M")+th("EPS 3M","eps_3m","col-num col-filter","EPS revision % L3M (cumulative)")+th("EPS 6M","eps_6m","col-num col-filter","EPS revision % L6M (cumulative)")+th("EPS 12M","eps_12m","col-num col-filter grp-eps-last","EPS revision % L12M (reference only — not scored)")
-    +th("EBITDA 1M","ebitda_1m","col-num col-filter grp-ebitda-first","EBITDA revision % L1M")+th("EBITDA 3M","ebitda_3m","col-num col-filter","EBITDA revision % L3M (cumulative)")+th("EBITDA 6M","ebitda_6m","col-num col-filter","EBITDA revision % L6M (cumulative)")+th("EBITDA 12M","ebitda_12m","col-num col-filter grp-ebitda-last","EBITDA L12M (reference only)")
-    +th("Sales 1M","sales_1m","col-num col-filter grp-sales-first","Sales revision % L1M")+th("Sales 3M","sales_3m","col-num col-filter","Sales L3M cumulative")+th("Sales 6M","sales_6m","col-num col-filter","Sales L6M cumulative")+th("Sales 12M","sales_12m","col-num col-filter grp-sales-last","Sales L12M (reference)")
-    +th("TP 1M","tp_1m","col-num col-filter grp-tp-first","Target price revision % L1M")+th("TP 3M","tp_3m","col-num col-filter","TP L3M cumulative")+th("TP 6M","tp_6m","col-num col-filter","TP L6M cumulative")+th("TP 12M","tp_12m","col-num col-filter grp-tp-last","TP L12M (reference)")
-    +th("% Buy","buy_pct","col-num col-filter grp-buy-first","Current % of analysts rating Buy")
-    +th("Buy L6M","buy_6m","col-num col-filter grp-buy-last","Change in Buy% over L6M")
-    +th("Score","ssem_score","col-num","Total SSEM score (-15 to +15) using net-off logic across 15 tests")
-    +th("Rating","ssem_rating_sort","col-txt","A-F rating via bell-curve over SSEM universe (10/15/25/25/25)");
-  h+='</tr></thead><tbody>';
+  h+='<div class="data-table-wrap"><table class="data-table">'+ssemHeadersHTML()+'<tbody>';
   for(var jr=0;jr<rows.length;jr++){
-    var rr2=rows[jr];
-    var tax=getTaxonomy(rr2.ticker);
-    var dn=(displayMode==="company")?(rr2.company||rr2.ticker):rr2.ticker;
-    h+='<tr onclick="openChart(\''+rr2.ticker+'\')" style="cursor:pointer">'
-      +'<td class="col-txt col-identity" style="font-weight:600;color:var(--text-bright)">'+dn+'</td>'
-      +'<td class="col-txt col-identity" style="font-size:11px">'+tax.sector+'</td>'
-      +'<td class="col-num col-price">'+fp(rr2.price)+'</td>';
-    h+='<td class="col-num col-filter grp-eps-first '+revClass(rr2.eps_1m)+'">'+fpcRaw(rr2.eps_1m)+'</td>';
-    h+='<td class="col-num col-filter '+revClass(rr2.eps_3m)+'">'+fpcRaw(rr2.eps_3m)+'</td>';
-    h+='<td class="col-num col-filter '+revClass(rr2.eps_6m)+'">'+fpcRaw(rr2.eps_6m)+'</td>';
-    h+='<td class="col-num col-filter grp-eps-last '+revClass(rr2.eps_12m)+'">'+fpcRaw(rr2.eps_12m)+'</td>';
-    h+='<td class="col-num col-filter grp-ebitda-first '+revClass(rr2.ebitda_1m)+'">'+fpcRaw(rr2.ebitda_1m)+'</td>';
-    h+='<td class="col-num col-filter '+revClass(rr2.ebitda_3m)+'">'+fpcRaw(rr2.ebitda_3m)+'</td>';
-    h+='<td class="col-num col-filter '+revClass(rr2.ebitda_6m)+'">'+fpcRaw(rr2.ebitda_6m)+'</td>';
-    h+='<td class="col-num col-filter grp-ebitda-last '+revClass(rr2.ebitda_12m)+'">'+fpcRaw(rr2.ebitda_12m)+'</td>';
-    h+='<td class="col-num col-filter grp-sales-first '+revClass(rr2.sales_1m)+'">'+fpcRaw(rr2.sales_1m)+'</td>';
-    h+='<td class="col-num col-filter '+revClass(rr2.sales_3m)+'">'+fpcRaw(rr2.sales_3m)+'</td>';
-    h+='<td class="col-num col-filter '+revClass(rr2.sales_6m)+'">'+fpcRaw(rr2.sales_6m)+'</td>';
-    h+='<td class="col-num col-filter grp-sales-last '+revClass(rr2.sales_12m)+'">'+fpcRaw(rr2.sales_12m)+'</td>';
-    h+='<td class="col-num col-filter grp-tp-first '+revClass(rr2.tp_1m)+'">'+fpcRaw(rr2.tp_1m)+'</td>';
-    h+='<td class="col-num col-filter '+revClass(rr2.tp_3m)+'">'+fpcRaw(rr2.tp_3m)+'</td>';
-    h+='<td class="col-num col-filter '+revClass(rr2.tp_6m)+'">'+fpcRaw(rr2.tp_6m)+'</td>';
-    h+='<td class="col-num col-filter grp-tp-last '+revClass(rr2.tp_12m)+'">'+fpcRaw(rr2.tp_12m)+'</td>';
-    h+='<td class="col-num col-filter grp-buy-first '+(rr2.buy_pct!=null&&rr2.buy_pct>=70?"pass":rr2.buy_pct!=null&&rr2.buy_pct>=40?"amber":"fail")+'">'+(rr2.buy_pct!=null?nf(rr2.buy_pct)+"%":"&mdash;")+'</td>';
-    h+='<td class="col-num col-filter grp-buy-last '+revClass(rr2.buy_6m)+'">'+(rr2.buy_6m!=null?fpcRaw(rr2.buy_6m):"&mdash;")+'</td>';
-    var scCls=rr2.ssem_score>0?"ssem-score-pos":(rr2.ssem_score<0?"ssem-score-neg":"ssem-score-zero");
-    h+='<td class="ssem-score-cell '+scCls+'">'+(rr2.ssem_score>0?"+":"")+rr2.ssem_score+'</td>';
-    h+='<td style="text-align:center">'+ssemRatingPill(rr2.ssem_rating)+'</td>';
-    h+='</tr>';
+    h+=ssemRowHTML(rows[jr]);
   }
   h+='</tbody></table></div>';
   container.innerHTML=h;
