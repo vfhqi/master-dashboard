@@ -830,8 +830,10 @@ function drawMasterChart(ticker){
   var plotW=W-pad.l-pad.r;
   var plotH=H-pad.t-pad.b;
   var n=chart.length;
-  var barW=Math.max(4,plotW/n);
-  var candleW=Math.max(3,barW*0.78);
+  // SESSION 12 D-MD-CHART-2: drop barW floor so bars shrink to fit.
+  // Old: Math.max(4, plotW/n) — forced 4px min, caused overflow at 2Y zoom on narrow panels.
+  var barW=plotW/n;
+  var candleW=Math.max(1,barW*0.78);
 
   var monthFull=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
   var monthShort=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
