@@ -260,22 +260,92 @@ def parse_ssem():
 
 
 def filter_to_universe(all_ssem):
-    """Filter SSEM data to our universe stocks using ticker mapping."""
-    with open(str(MAPPING_PATH)) as f:
-        mapping = json.load(f)
+    """Filter SSEM data to our universe stocks.
+
+    Session 11 (01-May-26): Switched from ticker_mapping.json (29 hand-built entries)
+    to direct match against universe.json (976 stocks). SSEM.xlsx uses the same
+    FactSet ticker format as universe.json, so ~96% match directly. Falls back to
+    ticker_mapping.json for the few exceptions (e.g. CARL.B-DK in SSEM vs CARLB-DK
+    in universe).
+    """
+    universe_path = DATA_DIR / "universe.json"
+    with open(str(universe_path)) as f:
+        universe = json.load(f)
+    universe_list = universe if isinstance(universe, list) else universe.get("stocks", [])
+
+    # Optional fallback mapping for ticker-format mismatches (loaded only if exists)
+    fallback_mapping = {}
+    if MAPPING_PATH.exists():
+        with open(str(MAPPING_PATH)) as f:
+            mp = json.load(f)
+        for univ_t, m in mp.get("stocks", {}).items():
+            fs_t = m.get("fs")
+            if fs_t and fs_t != univ_t:
+                fallback_mapping[univ_t] = fs_t
 
     output = {"_meta": {"source": "SSEM.xlsx", "description": "SS earnings momentum revisions"}}
 
-    matched = 0
-    for universe_ticker, m in mapping["stocks"].items():
-        fs_ticker = m["fs"]
-        if fs_ticker in all_ssem:
-            output[universe_ticker] = all_ssem[fs_ticker]
-            matched += 1
-        else:
-            print(f"  WARN: {universe_ticker} (fs={fs_ticker}) not found in SSEM")
+    # Dual-class share suffix candidates for FactSet ticker convention.
+    # Universe uses simplified form (e.g. ASSA-SE); SSEM uses .A-SE / .B-SE / .C-SE for Nordic + UK dual-class shares.
+    # Only applies to country codes that have known dual-class conventions; cross-country fallback (e.g. -SE -> -DK)
+    # is intentionally NOT done because it risks silently matching different companies on similar tickers.
+    DUAL_CLASS_COUNTRIES = {"-SE", "-DK", "-NO", "-FI", "-GB"}
 
-    print(f"  Matched {matched}/{len(mapping['stocks'])} universe stocks")
+    def dual_class_candidates(ticker):
+        """Yield SSEM-format candidates for a universe ticker."""
+        for suffix in DUAL_CLASS_COUNTRIES:
+            if ticker.endswith(suffix):
+                root = ticker[: -len(suffix)]
+                # Try .B first (more common), then .A, then .C
+                yield f"{root}.B{suffix}"
+                yield f"{root}.A{suffix}"
+                yield f"{root}.C{suffix}"
+                break
+
+    matched_direct = 0
+    matched_dual_class = 0
+    matched_fallback = 0
+    missing = []
+    dual_class_resolutions = []
+    for s in universe_list:
+        univ_ticker = s.get("ticker")
+        if not univ_ticker:
+            continue
+        # Try direct match first
+        if univ_ticker in all_ssem:
+            output[univ_ticker] = all_ssem[univ_ticker]
+            matched_direct += 1
+            continue
+        # Try dual-class suffix variants (.A / .B / .C)
+        resolved = None
+        for cand in dual_class_candidates(univ_ticker):
+            if cand in all_ssem:
+                resolved = cand
+                break
+        if resolved is not None:
+            output[univ_ticker] = all_ssem[resolved]
+            matched_dual_class += 1
+            dual_class_resolutions.append((univ_ticker, resolved))
+            continue
+        # Try fallback mapping (legacy ticker_mapping.json)
+        if univ_ticker in fallback_mapping:
+            fs_t = fallback_mapping[univ_ticker]
+            if fs_t in all_ssem:
+                output[univ_ticker] = all_ssem[fs_t]
+                matched_fallback += 1
+                continue
+        missing.append(univ_ticker)
+
+    total_matched = matched_direct + matched_dual_class + matched_fallback
+    print(f"  Direct matches: {matched_direct}")
+    print(f"  Dual-class suffix matches: {matched_dual_class}")
+    if dual_class_resolutions:
+        print(f"    First 5 dual-class: {dual_class_resolutions[:5]}")
+    print(f"  Fallback-mapping matches: {matched_fallback}")
+    print(f"  Missing (no SSEM data): {len(missing)}")
+    if missing:
+        print(f"    All missing: {missing}")
+    print(f"  Total matched: {total_matched}/{len(universe_list)} universe stocks ({100*total_matched/len(universe_list):.1f}%)")
     return output
 
 
