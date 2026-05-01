@@ -372,7 +372,7 @@ table.data-table td.col-identity{white-space:nowrap}
 .qual-tile{padding:12px 0;margin-bottom:8px;margin-top:24px}
 .qual-tile h4{font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:8px}
 .qualified-title{margin-top:20px}
-.chart-panel{position:fixed;top:var(--header-height);right:0;bottom:0;width:25%;background:var(--card);border-left:1px solid var(--border);z-index:90;transform:translateX(100%);transition:transform .3s ease,width .3s ease;overflow-y:auto;padding:16px}
+.chart-panel{position:fixed;top:var(--header-height);right:0;bottom:0;width:25%;background:var(--card);border-left:1px solid var(--border);z-index:90;transform:translateX(100%);transition:transform .3s ease,width .3s ease;overflow-y:auto;padding:16px 24px 16px 16px}
 .chart-panel.open{transform:translateX(0)}
 .chart-open .main{margin-right:25%;transition:margin-right .3s ease}
 .chart-panel .close-btn{position:absolute;top:8px;right:8px;background:var(--card-hover);border:1px solid var(--border);color:var(--text);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:16px}
@@ -760,6 +760,10 @@ function _expandChartRows(rows){
 }
 
 function loadChartData(ticker, callback){
+  // SESSION 12 D-MD-CHART-1: pure script-tag injection. XHR+eval path failed silently
+  // on GitHub Pages because eval(xhr.responseText) runs in IIFE-local scope, and the
+  // chart file's `var CHART_REGISTRY=CHART_REGISTRY||{}` shadows the global registry.
+  // Script-tag injection executes at GLOBAL scope and writes to window.CHART_REGISTRY directly.
   // Already loaded?
   if(CHART_REGISTRY[ticker]){
     callback(_expandChartRows(CHART_REGISTRY[ticker]));
@@ -772,52 +776,20 @@ function loadChartData(ticker, callback){
   }
   _chartLoading[ticker]=[callback];
   var url="charts/"+_safeTickerFile(ticker)+".js";
-  // Try XHR first (works from file:// and http://), fall back to script injection
-  var xhr=new XMLHttpRequest();
-  xhr.open("GET",url,true);
-  xhr.onreadystatechange=function(){
-    if(xhr.readyState!==4)return;
-    if(xhr.status===200||(xhr.status===0&&xhr.responseText)){
-      try{eval(xhr.responseText)}catch(e){}
-      var cbs=_chartLoading[ticker]||[];
-      delete _chartLoading[ticker];
-      var data=CHART_REGISTRY[ticker]?_expandChartRows(CHART_REGISTRY[ticker]):null;
-      for(var i=0;i<cbs.length;i++)cbs[i](data);
-    }else{
-      // XHR returned non-200 (e.g. 404) — fall back to script injection
-      var s2=document.createElement("script");
-      s2.src=url;
-      s2.onload=function(){
-        var cbs3=_chartLoading[ticker]||[];
-        delete _chartLoading[ticker];
-        var data3=CHART_REGISTRY[ticker]?_expandChartRows(CHART_REGISTRY[ticker]):null;
-        for(var i=0;i<cbs3.length;i++)cbs3[i](data3);
-      };
-      s2.onerror=function(){
-        var cbs3=_chartLoading[ticker]||[];
-        delete _chartLoading[ticker];
-        for(var i=0;i<cbs3.length;i++)cbs3[i](null);
-      };
-      document.head.appendChild(s2);
-    }
+  var s=document.createElement("script");
+  s.src=url;
+  s.onload=function(){
+    var cbs=_chartLoading[ticker]||[];
+    delete _chartLoading[ticker];
+    var data=CHART_REGISTRY[ticker]?_expandChartRows(CHART_REGISTRY[ticker]):null;
+    for(var i=0;i<cbs.length;i++)cbs[i](data);
   };
-  try{xhr.send()}catch(e){
-    // XHR blocked entirely (file:// on some browsers) — fall back to script injection
-    var s=document.createElement("script");
-    s.src=url;
-    s.onload=function(){
-      var cbs2=_chartLoading[ticker]||[];
-      delete _chartLoading[ticker];
-      var data2=CHART_REGISTRY[ticker]?_expandChartRows(CHART_REGISTRY[ticker]):null;
-      for(var i=0;i<cbs2.length;i++)cbs2[i](data2);
-    };
-    s.onerror=function(){
-      var cbs2=_chartLoading[ticker]||[];
-      delete _chartLoading[ticker];
-      for(var i=0;i<cbs2.length;i++)cbs2[i](null);
-    };
-    document.head.appendChild(s);
-  }
+  s.onerror=function(){
+    var cbs=_chartLoading[ticker]||[];
+    delete _chartLoading[ticker];
+    for(var i=0;i<cbs.length;i++)cbs[i](null);
+  };
+  document.head.appendChild(s);
 }
 // === END LAZY CHART LOADER ===
 
