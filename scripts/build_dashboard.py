@@ -1330,9 +1330,10 @@ function buildMAMap(price,ma200,ma150,ma50){
   var scaleMin=anchor*0.80;
   var scaleMax=anchor*1.20;
   var range=scaleMax-scaleMin;if(range===0)range=1;
-  var w=220,ht=42,pad=10;
+  // viewBox stays large (480) so internal coords have headroom; SVG fills container width.
+  var w=480,ht=42,pad=10;
   var mid=20;
-  var svg='<svg width="'+w+'" height="'+ht+'" viewBox="0 0 '+w+' '+ht+'" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle">';
+  var svg='<svg width="100%" height="'+ht+'" viewBox="0 0 '+w+' '+ht+'" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;display:block">';
   svg+='<line x1="'+pad+'" y1="'+mid+'" x2="'+(w-pad)+'" y2="'+mid+'" stroke="#d4d0c8" stroke-width="1" />';
   var j;
   for(j=0;j<vals.length;j++){
@@ -2106,7 +2107,7 @@ function renderBP(){
   var rows=[];
   for(var j=0;j<allRows.length;j++){
     var r=allRows[j],bp=r.f.basing_plateau;
-    if(!bp||!bp.group_a){r.bp_stage="";r.ga=false;r.gc=false;r.t1=false;r.t2=false;r.t1_pct=null;r.t2_pct=null;r.bp_loose_hist=[];r.bp_loose_passed=0;r.bp_loose_total=0;r.bp_loose_streak=0;r.bp_loose_pct=0;r.bp_tight_streak=0;r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";r.ma_map_price=r.price;r.ma_map_200=null;r.ma_map_150=null;r.ma_map_50=null;rows.push(r);continue;}
+    if(!bp||!bp.group_a){r.bp_stage="";r.ga=false;r.gc=false;r.t1=false;r.t2=false;r.t1_pct=null;r.t2_pct=null;r.bp_loose_hist=[];r.bp_loose_passed=0;r.bp_loose_total=0;r.bp_loose_streak=0;r.bp_loose_pct=0;r.bp_tight_streak=0;r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";r.vcp_s2=r.f.vcp?r.f.vcp.stage_2_uptrend:false;r.utr_stage2=r.f.uptrend_retest?r.f.uptrend_retest.stage:"";r.ssem_rating=(typeof ssemRatingMap!=="undefined"&&ssemRatingMap[r.ticker])?ssemRatingMap[r.ticker]:"-";var nbVl=(typeof D!=="undefined"&&D&&D.valuation)?D.valuation[r.ticker]:null;r.pe_pctile=nbVl?nbVl.pe_percentile:null;r.ma_map_price=r.price;r.ma_map_200=null;r.ma_map_150=null;r.ma_map_50=null;rows.push(r);continue;}
     r.bp_stage=bp.stage;r.ga=bp.group_a.pass;r.gc=bp.group_c.pass;
     r.t1=bp.group_a.tests.T1;r.t2=bp.group_a.tests.T2;
     // Duration history (per Pass-A: only Loose surfaced; Tight retained for Deep Base tile)
@@ -2117,6 +2118,12 @@ function renderBP(){
     r.t1_pct=m200?(r.price-m200)/m200:null;
     r.t2_pct=(m50&&m200)?(m50-m200)/m200:null;
     r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";
+    // Pass A.1 (03-May-26): cross-filter columns — pull stage info from sibling filters
+    r.vcp_s2=r.f.vcp?r.f.vcp.stage_2_uptrend:false;
+    r.utr_stage2=r.f.uptrend_retest?r.f.uptrend_retest.stage:"";
+    r.ssem_rating=(typeof ssemRatingMap!=="undefined"&&ssemRatingMap[r.ticker])?ssemRatingMap[r.ticker]:"-";
+    var bpVl=(typeof D!=="undefined"&&D&&D.valuation)?D.valuation[r.ticker]:null;
+    r.pe_pctile=bpVl?bpVl.pe_percentile:null;
     r.ma_map_price=r.price;r.ma_map_200=m200;r.ma_map_150=m150;r.ma_map_50=m50;
 
     var skip=false;
@@ -2137,35 +2144,64 @@ function renderBP(){
   h+=buildIndSecTables(applyIndSecFilter(allRows),bpGroupDefs);
 
   function bpHeaders(){
-    // Pass A: 3(common: Tkr/Sec/Price) + 1(MA Range 480px) + 3(Streak/%63d/Sparkline) + 2(P~200/50~200) + 2(refs MM99/PB) + 8(ratings) = 19
+    // Pass A.1 (03-May-26): order = MA Range -> Basing test -> Duration -> Cross-filter refs.
+    // 3(common) + 1(MA Range 480) + 2(Basing test) + 3(Duration: Streak/%63d/Sparkline)
+    //   + 6(Cross-filter: MM99/PB/VCP/UTR/SSEM/Val) + 8(ratings) = 23
     var hdr='<tr class="group-header-row"><th colspan="3"></th><th></th>';
-    hdr+='<th colspan="3" style="background:rgba(50,100,200,0.06)">Duration (last 63 trading days)</th>';
     hdr+='<th colspan="2" style="background:rgba(50,150,50,0.08)">Basing test (\u00b115%)</th>';
-    hdr+='<th colspan="2"></th>';
+    hdr+='<th colspan="3" style="background:rgba(50,100,200,0.06)">Duration (last 63 trading days)</th>';
+    hdr+='<th colspan="6" style="background:rgba(120,80,160,0.06)">Cross-filter stage</th>';
     hdr+=ratingsColHeaders().length>0?'<th colspan="8" class="col-ratings">Ratings</th>':"";
     hdr+='</tr><tr class="col-header-row">';
-    hdr+=bpCommonCols()+th("MA Range","ma_map_price","col-filter","Visual: relative positions of Price, 200D, 150D, 50D MAs","width:480px")
-      +th("Streak","bp_loose_streak","col-filter","Consecutive trading days currently meeting the Basing test (walking back from today). Higher = more mature base. Sort desc by default in Pass B.","width:60px")
-      +th("%/63d","bp_loose_pct","col-filter","Fraction of last 63 trading days the Basing test passed (95% gate = qualifies)","width:60px")
-      +th("Duration","bp_loose_streak","col-filter","Per-day pass/fail visual: 63 thin bars, oldest left, latest right. Green = test passed that day.","width:140px")
+    hdr+=bpCommonCols()
+      +th("MA Range","ma_map_price","col-filter","Visual: relative positions of Price, 200D, 150D, 50D MAs","width:480px")
       +th("P~200","t1_pct","col-filter","Price within 15% of 200D MA","width:50px")
       +th("50~200","t2_pct","col-filter","50D MA within 15% of 200D MA","width:50px")
-      +th("MM 99","mm_stage","col-txt col-ref","MM99 filter stage")+th("Probing Bet","pb_stage2","col-txt col-ref","Probing Bet filter stage")+ratingsColHeaders();
+      +th("Streak","bp_loose_streak","col-filter","Consecutive trading days currently meeting the Basing test (walking back from today). Higher = more mature base.","width:60px")
+      +th("%/63d","bp_loose_pct","col-filter","Fraction of last 63 trading days the Basing test passed (95% gate = qualifies)","width:60px")
+      +th("Duration","bp_loose_streak","col-filter","Per-day pass/fail visual: 63 bars, oldest left, latest right. Green = test passed that day. Major ticks = months (22d), minor = weeks (5d).","width:140px")
+      +th("MM 99","mm_stage","col-txt col-ref","MM99 filter stage","width:48px")
+      +th("PB","pb_stage2","col-txt col-ref","Probing Bet filter stage","width:48px")
+      +th("VCP","vcp_s2","col-txt col-ref","VCP filter \u2014 Stage 2 uptrend pass","width:42px")
+      +th("UTR","utr_stage2","col-txt col-ref","Uptrend Retest filter stage","width:48px")
+      +th("SSEM","ssem_rating","col-txt col-ref","SS Earnings Momentum rating (A-F)","width:48px")
+      +th("Val","pe_pctile","col-num col-ref","P/E percentile in 10Y range \u2014 lower = cheaper","width:48px")
+      +ratingsColHeaders();
     hdr+='</tr>';return hdr;
   }
   function bpRow(r){
+    // VCP cell: simple S2 badge or em-dash
+    var vcpCell=r.vcp_s2?'<span class="badge badge-capital">S2</span>':'<span class="badge badge-fail">&mdash;</span>';
+    // SSEM cell: A-F pill via existing rating-pill classes if present, otherwise em-dash
+    var ssemR=r.ssem_rating;
+    var ssemCell;
+    if(ssemR&&ssemR!=="-"&&ssemR!=="\u2014"){
+      ssemCell='<span class="pill-'+ssemR+'" style="padding:2px 6px;border-radius:3px;font-weight:700;font-size:10px">'+ssemR+'</span>';
+    } else {ssemCell='<span style="color:#999">&mdash;</span>';}
+    // Valuation cell: P/E percentile if present
+    var valCell;
+    if(r.pe_pctile!=null){
+      var pct=Math.round(r.pe_pctile);
+      var col=pct<=25?'#1b5e20':pct<=50?'#2e7d32':pct<=75?'#8d6e00':'#c62828';
+      valCell='<span style="color:'+col+';font-weight:600;font-variant-numeric:tabular-nums">'+pct+'</span>';
+    } else {valCell='<span style="color:#999">&mdash;</span>';}
     return'<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+bpCommonTds(r)
       +'<td class="col-filter">'+buildMAMap(r.ma_map_price,r.ma_map_200,r.ma_map_150,r.ma_map_50)+'</td>'
+      +testCell(r.t1,r.t1_pct,"col-filter")+testCell(r.t2,r.t2_pct,"col-filter")
       +'<td class="col-num col-filter" style="font-weight:600;font-variant-numeric:tabular-nums">'+(r.bp_loose_streak>0?r.bp_loose_streak+"d":'<span style="color:#999;font-weight:400">0d</span>')+'</td>'
       +'<td class="col-num col-filter" style="font-variant-numeric:tabular-nums">'+(r.bp_loose_total>0?Math.round(r.bp_loose_pct*100)+"%":"&mdash;")+'</td>'
       +'<td class="col-filter">'+bpDaysPipsCompact(r.bp_loose_hist)+'</td>'
-      +testCell(r.t1,r.t1_pct,"col-filter")+testCell(r.t2,r.t2_pct,"col-filter")
-      +'<td class="col-txt col-ref">'+badge(r.mm_stage)+'</td><td class="col-txt col-ref">'+badge(r.pb_stage2)+'</td>'
+      +'<td class="col-txt col-ref">'+badge(r.mm_stage)+'</td>'
+      +'<td class="col-txt col-ref">'+badge(r.pb_stage2)+'</td>'
+      +'<td class="col-txt col-ref">'+vcpCell+'</td>'
+      +'<td class="col-txt col-ref">'+badge(r.utr_stage2)+'</td>'
+      +'<td class="col-txt col-ref">'+ssemCell+'</td>'
+      +'<td class="col-num col-ref">'+valCell+'</td>'
       +ratingsColTds(r)+'</tr>';
   }
   var posRowsBP=applyIndSecFilter(filterToPositions(allRows));
   // Enrich position rows with BP data (they may not have been enriched if filtered out)
-  for(var pk=0;pk<posRowsBP.length;pk++){var pr=posRowsBP[pk];if(pr.bp_stage===undefined){var bpd=pr.f.basing_plateau;if(!bpd||!bpd.group_a){pr.bp_stage="";pr.ga=false;pr.gc=false;pr.t1=false;pr.t2=false;pr.bp_loose_hist=[];pr.bp_loose_passed=0;pr.bp_loose_total=0;pr.bp_loose_streak=0;pr.bp_loose_pct=0;pr.bp_tight_streak=0;}else{pr.bp_stage=bpd.stage;pr.ga=bpd.group_a.pass;pr.gc=bpd.group_c.pass;pr.t1=bpd.group_a.tests.T1;pr.t2=bpd.group_a.tests.T2;pr.bp_loose_hist=bpd.group_a.history||[];pr.bp_loose_passed=bpd.group_a.days_passed||0;pr.bp_loose_total=bpd.group_a.days_total||0;pr.bp_loose_streak=bpd.group_a.streak||0;pr.bp_loose_pct=pr.bp_loose_total>0?(pr.bp_loose_passed/pr.bp_loose_total):0;pr.bp_tight_streak=bpd.group_c.streak||0;}var m200b=pr.mas?pr.mas["200D"]:null,m150b=pr.mas?pr.mas["150D"]:null,m50b=pr.mas?pr.mas["50D"]:null;pr.t1_pct=m200b?(pr.price-m200b)/m200b:null;pr.t2_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.mm_stage=pr.f.mm99?pr.f.mm99.stage:"";pr.pb_stage2=pr.f.probing_bet?pr.f.probing_bet.stage:"";pr.ma_map_price=pr.price;pr.ma_map_200=m200b;pr.ma_map_150=m150b;pr.ma_map_50=m50b;}}
+  for(var pk=0;pk<posRowsBP.length;pk++){var pr=posRowsBP[pk];if(pr.bp_stage===undefined){var bpd=pr.f.basing_plateau;if(!bpd||!bpd.group_a){pr.bp_stage="";pr.ga=false;pr.gc=false;pr.t1=false;pr.t2=false;pr.bp_loose_hist=[];pr.bp_loose_passed=0;pr.bp_loose_total=0;pr.bp_loose_streak=0;pr.bp_loose_pct=0;pr.bp_tight_streak=0;}else{pr.bp_stage=bpd.stage;pr.ga=bpd.group_a.pass;pr.gc=bpd.group_c.pass;pr.t1=bpd.group_a.tests.T1;pr.t2=bpd.group_a.tests.T2;pr.bp_loose_hist=bpd.group_a.history||[];pr.bp_loose_passed=bpd.group_a.days_passed||0;pr.bp_loose_total=bpd.group_a.days_total||0;pr.bp_loose_streak=bpd.group_a.streak||0;pr.bp_loose_pct=pr.bp_loose_total>0?(pr.bp_loose_passed/pr.bp_loose_total):0;pr.bp_tight_streak=bpd.group_c.streak||0;}var m200b=pr.mas?pr.mas["200D"]:null,m150b=pr.mas?pr.mas["150D"]:null,m50b=pr.mas?pr.mas["50D"]:null;pr.t1_pct=m200b?(pr.price-m200b)/m200b:null;pr.t2_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.mm_stage=pr.f.mm99?pr.f.mm99.stage:"";pr.pb_stage2=pr.f.probing_bet?pr.f.probing_bet.stage:"";pr.vcp_s2=pr.f.vcp?pr.f.vcp.stage_2_uptrend:false;pr.utr_stage2=pr.f.uptrend_retest?pr.f.uptrend_retest.stage:"";pr.ssem_rating=(typeof ssemRatingMap!=="undefined"&&ssemRatingMap[pr.ticker])?ssemRatingMap[pr.ticker]:"-";var prVl=(typeof D!=="undefined"&&D&&D.valuation)?D.valuation[pr.ticker]:null;pr.pe_pctile=prVl?prVl.pe_percentile:null;pr.ma_map_price=pr.price;pr.ma_map_200=m200b;pr.ma_map_150=m150b;pr.ma_map_50=m50b;}}
   if(posRowsBP.length>0){
     h+='<h3 class="qualified-title" id="section-portfolio">Live Portfolio ('+posRowsBP.length+')</h3>';
     h+='<div class="data-table-wrap" style="margin-bottom:12px"><table class="data-table data-table-portfolio"><thead>'+bpHeaders()+'</thead><tbody>';
@@ -2183,12 +2219,35 @@ function renderBP(){
   ],totalCount,bpHeaders,bpRow);
   document.getElementById("tab-bp").innerHTML=h;
 }
-// Compact 63-bar duration sparkline (no inline label \u2014 Streak/%63d in own cols)
+// Compact 63-bar duration sparkline with month + week ticks.
+// Layout: stacked container \u2014 strip (11px) on top, ticks (5px) below.
+// Major ticks (months) every 22 trading days; minor (weeks) every 5 days.
+// Bars are 2px wide -> total strip width = 63*2 = 126px (matches CSS).
 function bpDaysPipsCompact(hist){
   if(!hist||hist.length===0)return'<span style="color:#999">&mdash;</span>';
-  var h='<div class="bp-days-bar" style="display:inline-flex;gap:0">';
-  for(var j=0;j<hist.length;j++)h+='<div class="day-pip '+(hist[j]?'day-pip-on':'day-pip-off')+'"></div>';
-  return h+'</div>';
+  var n=hist.length, pipW=2, totalW=n*pipW;
+  var h='<div style="display:inline-block;line-height:1;vertical-align:middle">';
+  // Strip
+  h+='<div class="bp-days-bar" style="display:flex;gap:0;width:'+totalW+'px">';
+  for(var j=0;j<n;j++)h+='<div class="day-pip '+(hist[j]?'day-pip-on':'day-pip-off')+'"></div>';
+  h+='</div>';
+  // Tick row \u2014 SVG underneath the strip
+  h+='<svg width="'+totalW+'" height="6" style="display:block;margin-top:1px" xmlns="http://www.w3.org/2000/svg">';
+  // Minor ticks every 5 days (weeks)
+  for(var w=5;w<n;w+=5){
+    var x=w*pipW;
+    h+='<line x1="'+x+'" y1="0" x2="'+x+'" y2="2" stroke="#bcb7a6" stroke-width="1"/>';
+  }
+  // Major ticks every 22 days (months)
+  for(var m=22;m<n;m+=22){
+    var xm=m*pipW;
+    h+='<line x1="'+xm+'" y1="0" x2="'+xm+'" y2="5" stroke="#7d756a" stroke-width="1"/>';
+  }
+  // "today" marker on the right edge
+  h+='<line x1="'+(totalW-1)+'" y1="0" x2="'+(totalW-1)+'" y2="5" stroke="#1f2328" stroke-width="1"/>';
+  h+='</svg>';
+  h+='</div>';
+  return h;
 }
 
 // ================================================================
