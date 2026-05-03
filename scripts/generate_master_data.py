@@ -482,6 +482,82 @@ def build_prices_json(universe, raw_data, benchmark_rows):
         bp_duration["tight_history"] = tight_history
         bp_duration["tight_streak"] = _bp_streak(tight_history)
 
+        # ── Pass B (03-May-26): 3 new orthogonal Stage-1 tests ─────
+        # Stored as bp_extras dict; consumed by qualification block as bp.flat_mas_pass /
+        # bp.vol_contraction_pass / bp.time_in_base_pass and the bp.score composite.
+
+        bp_extras = {
+            "flat_mas_pass": False, "slope_200": None, "slope_150": None,
+            "vol_contraction_pass": False, "vol_ratio": None,
+            "time_in_base_pass": False, "days_since_drop": None,
+        }
+
+        # T-NEW-1: MA slope flatness (annualised)
+        # slope = (sma_today - sma_63d_ago) / sma_63d_ago * (252/63) = annualised
+        # Pass if abs(slope_200) <= 0.02 AND abs(slope_150) <= 0.04
+        if len(rows_with_sma) >= 64:
+            sma_200_today = rows_with_sma[-1].get("sma_200")
+            sma_150_today = rows_with_sma[-1].get("sma_150")
+            sma_200_prior = rows_with_sma[-64].get("sma_200")
+            sma_150_prior = rows_with_sma[-64].get("sma_150")
+            if sma_200_today and sma_200_prior and sma_200_prior != 0:
+                slope_200 = (sma_200_today - sma_200_prior) / sma_200_prior * (252.0 / 63.0)
+                bp_extras["slope_200"] = round(slope_200, 4)
+            if sma_150_today and sma_150_prior and sma_150_prior != 0:
+                slope_150 = (sma_150_today - sma_150_prior) / sma_150_prior * (252.0 / 63.0)
+                bp_extras["slope_150"] = round(slope_150, 4)
+            if bp_extras["slope_200"] is not None and bp_extras["slope_150"] is not None:
+                bp_extras["flat_mas_pass"] = (
+                    abs(bp_extras["slope_200"]) <= 0.02 and abs(bp_extras["slope_150"]) <= 0.04
+                )
+
+        # T-NEW-2: Volume contraction — avg L3M vol / avg L12M vol < 0.90
+        # L3M is INCLUDED in L12M (per Richard's spec; Watson flagged limitation in decisions.md).
+        if len(rows_with_sma) >= 252:
+            vols_l3m = [r.get("volume") for r in rows_with_sma[-63:] if r.get("volume") is not None]
+            vols_l12m = [r.get("volume") for r in rows_with_sma[-252:] if r.get("volume") is not None]
+            if len(vols_l3m) > 0 and len(vols_l12m) > 0:
+                avg_l3m = sum(vols_l3m) / len(vols_l3m)
+                avg_l12m = sum(vols_l12m) / len(vols_l12m)
+                if avg_l12m > 0:
+                    ratio = avg_l3m / avg_l12m
+                    bp_extras["vol_ratio"] = round(ratio, 3)
+                    bp_extras["vol_contraction_pass"] = ratio < 0.90
+
+        # T-NEW-3: Time-in-base — ≥60 trading days since last 20% drop from prior 30d high
+        # AND no MM99 Capital pass in last ~3 month-ends. (mm99_monthly_history populated below;
+        # we use this stock's mm99_monthly_history list which we'll compute next.)
+        # Walk back from today, find most recent close that was ≤80% of its prior 30d high.
+        if len(rows_with_sma) >= 60:
+            window_n = min(252, len(rows_with_sma))
+            most_recent_drop_idx = None
+            for back_i in range(window_n - 1, 30, -1):  # newest -> oldest, but keep last drop
+                cl = rows_with_sma[-1 - (window_n - 1 - back_i)].get("close") if back_i < window_n else None
+            # Simpler: index 0..len(rows_with_sma)-1 walking forward, track latest qualifying drop
+            most_recent_drop_idx = None
+            n_total = len(rows_with_sma)
+            for i in range(30, n_total):
+                row_i = rows_with_sma[i]
+                cl = row_i.get("close")
+                if cl is None:
+                    continue
+                prior_window = rows_with_sma[i-30:i]
+                prior_highs = [r.get("high") for r in prior_window if r.get("high") is not None]
+                if not prior_highs:
+                    continue
+                prior_high = max(prior_highs)
+                if prior_high > 0 and cl <= prior_high * 0.80:
+                    most_recent_drop_idx = i
+            if most_recent_drop_idx is not None:
+                days_since = (n_total - 1) - most_recent_drop_idx
+            else:
+                days_since = window_n  # no drop found in window — treat as full window
+            bp_extras["days_since_drop"] = days_since
+            # mm99 recent capital check — populated below; use placeholder of False here, refined
+            # after mm99_monthly_history is built. Pre-set time_in_base_pass on days_since alone;
+            # final pass-flag is recomputed after mm99_monthly_history exists (see below).
+            bp_extras["time_in_base_pass"] = days_since >= 60
+
         # ── MM99 Monthly History (T1-T8, 28-Apr-26) ────────────────
         # At each of the last 12 calendar month-ends, reconstruct all 8
         # Minervini technical tests and record whether ALL 8 passed.
@@ -558,6 +634,14 @@ def build_prices_json(universe, raw_data, benchmark_rows):
         # Pad to exactly 12 if we got fewer month-ends
         while len(mm99_monthly_history) < 12:
             mm99_monthly_history.insert(0, False)
+
+        # Pass B refinement: time_in_base_pass also requires no recent MM99 Capital pass
+        # (any of the last 3 month-ends). If MM99 Capital fired recently, the stock has
+        # already launched into Stage 2 — it's not a fresh Stage 1 base.
+        if bp_extras.get("time_in_base_pass") and len(mm99_monthly_history) >= 3:
+            recent_mm99_capital = any(mm99_monthly_history[-3:])
+            if recent_mm99_capital:
+                bp_extras["time_in_base_pass"] = False
 
         # ── UTR pre-computed metrics (S3-S7, 27-Apr-26) ─────────────
         # These feed into compute_all_filters for Uptrend Retest signals.
@@ -711,6 +795,7 @@ def build_prices_json(universe, raw_data, benchmark_rows):
             "ma200_month_detail": ma200_month_detail,
             "mm99_monthly_history": mm99_monthly_history,
             "bp_duration": bp_duration,
+            "bp_extras": bp_extras,
             "high_52w": round(high_52w, 4),
             "swing_high": round(swing_high, 4),
             "low_52w": round(low_52w, 4),
@@ -866,12 +951,42 @@ def compute_all_filters(prices):
                          "history": bp_dur.get("tight_history", []),
                          "streak": bp_dur.get("tight_streak", 0)}
 
-        # Qualification stage
-        if bp["group_c"]["pass"]:
+        # ── Pass B (D-MD-FILTER-12 to 15): composite-score + new stage mapping ──
+        # Pull the 3 new test results from bp_extras (computed in build_prices_json).
+        bp_ex = stock.get("bp_extras", {}) or {}
+        bp["flat_mas_pass"] = bp_ex.get("flat_mas_pass", False)
+        bp["slope_200"] = bp_ex.get("slope_200")
+        bp["slope_150"] = bp_ex.get("slope_150")
+        bp["vol_contraction_pass"] = bp_ex.get("vol_contraction_pass", False)
+        bp["vol_ratio"] = bp_ex.get("vol_ratio")
+        bp["time_in_base_pass"] = bp_ex.get("time_in_base_pass", False)
+        bp["days_since_drop"] = bp_ex.get("days_since_drop")
+
+        # Composite BP score: 0-4 based on the 4 orthogonal tests.
+        # Test 1 = Basing (group_a pass, i.e. Loose ±15% + 3-month duration)
+        # Test 2 = Flat MAs (T-NEW-1)
+        # Test 3 = Volume contraction (T-NEW-2)
+        # Test 4 = Time-in-base (T-NEW-3)
+        bp_test_basing = bool(bp["group_a"]["pass"])
+        bp_test_flat = bool(bp["flat_mas_pass"])
+        bp_test_vol = bool(bp["vol_contraction_pass"])
+        bp_test_time = bool(bp["time_in_base_pass"])
+        bp["score"] = sum([bp_test_basing, bp_test_flat, bp_test_vol, bp_test_time])
+        bp["score_max"] = 4
+        bp["score_breakdown"] = {
+            "basing": bp_test_basing,
+            "flat_mas": bp_test_flat,
+            "vol_contraction": bp_test_vol,
+            "time_in_base": bp_test_time,
+        }
+
+        # Stage mapping (D-MD-FILTER-12): 4->Capital, 3->Late, 2->Early, <2->None.
+        # Score=1 (Basing only) is rendered as "Base Only" tile but does NOT count as a stage.
+        if bp["score"] == 4:
             bp["stage"] = "Capital"
-        elif bp["group_b"]["pass"]:
+        elif bp["score"] == 3:
             bp["stage"] = "Late"
-        elif bp["group_a"]["pass"]:
+        elif bp["score"] == 2:
             bp["stage"] = "Early"
         else:
             bp["stage"] = None

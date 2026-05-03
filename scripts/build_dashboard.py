@@ -491,8 +491,9 @@ var utrMinCap=0;
 var utrStageFilter="";  // ""=all, "early"=Early+, "late"=Late+, "capital"=Capital only
 var utrFailedFilter="";  // ""=off, "L1W"=last 1 week, "L1M"=last 1 month
 var utrShowInputs=false;  // default hidden
-var displayMode="ticker";
+var displayMode="company";  /* Pass A.2: default to Company name across all tabs (was "ticker") */
 var valueMode="tick";
+var bpFirstVisit=true;  /* Pass A.2: flip to pct mode on first BP visit (only) */
 var showRatings=false;
 var TAB_IDS=[""" + tab_ids_js + r"""];
 var TAB_LABELS=[""" + tab_labels_js + r"""];
@@ -1356,6 +1357,45 @@ function testCell(pass,pctVal,cls){
   }
   return'<td class="'+cls+'">'+tick(pass)+'</td>';
 }
+// Pass A.2: BP-specific 3-tier test cell. Basing test is binary (in/out of ±15% band).
+// Magnitude inside the band doesn't matter; magnitude outside only matters as
+// "near-miss" vs "clear-miss." 3 tiers: pass (green) / near-miss ±15-20% (amber) / clear-miss (grey).
+function bpTestCell(pctVal,passBand){
+  if(pctVal==null) return '<td class="col-num col-filter"><span style="color:#999">&mdash;</span></td>';
+  var absV = Math.abs(pctVal);
+  var bg, fg;
+  if(absV <= passBand){
+    // Inside band: solid pass green
+    bg = 'rgba(46,125,50,0.18)'; fg = '#1b5e20';
+  } else if(absV <= passBand + 0.05){
+    // Near-miss (within 5pp of pass band)
+    bg = 'rgba(245,166,35,0.16)'; fg = '#8d6e00';
+  } else {
+    // Clear-miss
+    bg = 'transparent'; fg = '#888';
+  }
+  if(valueMode==="pct"){
+    return '<td class="col-num col-filter" style="background:'+bg+';color:'+fg+';font-variant-numeric:tabular-nums;font-weight:600">'+fpc1(pctVal)+'</td>';
+  }
+  // Tick mode: show tick/cross with the same background tint
+  var symbol = (absV<=passBand) ? '<span class="tick">&#10003;</span>' : '<span class="cross">&#10007;</span>';
+  return '<td class="col-filter" style="background:'+bg+'">'+symbol+'</td>';
+}
+// Pass A.2: streak length conditional class
+function bpStreakColour(streak){
+  if(streak >= 60) return {bg:'rgba(27,94,32,0.18)', fg:'#0d3817'};      // mature: dark green
+  if(streak >= 30) return {bg:'rgba(46,125,50,0.14)', fg:'#1b5e20'};      // forming: mid green
+  if(streak >= 10) return {bg:'rgba(245,166,35,0.14)', fg:'#8d6e00'};     // young: amber
+  if(streak > 0)   return {bg:'transparent', fg:'#888'};                  // very young: light grey
+  return {bg:'transparent', fg:'#bbb'};                                   // 0d
+}
+// Pass A.2: %63d conditional class
+function bpPctColour(pct){
+  if(pct >= 0.95) return {bg:'rgba(27,94,32,0.18)', fg:'#0d3817'};        // qualifies (≥95%)
+  if(pct >= 0.80) return {bg:'rgba(46,125,50,0.14)', fg:'#1b5e20'};       // close (80-94%)
+  if(pct >= 0.50) return {bg:'rgba(245,166,35,0.14)', fg:'#8d6e00'};      // mid (50-79%)
+  return {bg:'transparent', fg:'#888'};                                   // weak (<50%)
+}
 
 // UTR: format pct with 0dp, (X)% for negatives, colour-coded
 function utrPct(v){
@@ -2102,14 +2142,31 @@ function bpCommonTds(r){
     +'<td class="col-num col-price">'+fp(r.price)+'</td>';
 }
 function renderBP(){
+  // Pass A.2: default to Pct mode on first BP visit (only). Sticky after — user can toggle off.
+  // Pass B: also default-sort by BP Score desc on first BP visit.
+  if(bpFirstVisit){
+    bpFirstVisit=false;
+    if(valueMode==="tick"){
+      valueMode="pct";
+      var vbtn=document.getElementById("btn-value-mode");
+      if(vbtn){vbtn.classList.add("active");vbtn.textContent="% Distance";}
+    }
+    currentSort={col:"bp_score",dir:"desc"};
+  }
   buildHeaderControls("bp");
   var allRows=baseRows();
   var rows=[];
   for(var j=0;j<allRows.length;j++){
     var r=allRows[j],bp=r.f.basing_plateau;
-    if(!bp||!bp.group_a){r.bp_stage="";r.ga=false;r.gc=false;r.t1=false;r.t2=false;r.t1_pct=null;r.t2_pct=null;r.bp_loose_hist=[];r.bp_loose_passed=0;r.bp_loose_total=0;r.bp_loose_streak=0;r.bp_loose_pct=0;r.bp_tight_streak=0;r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";r.vcp_s2=r.f.vcp?r.f.vcp.stage_2_uptrend:false;r.utr_stage2=r.f.uptrend_retest?r.f.uptrend_retest.stage:"";r.ssem_rating=(typeof ssemRatingMap!=="undefined"&&ssemRatingMap[r.ticker])?ssemRatingMap[r.ticker]:"-";var nbVl=(typeof D!=="undefined"&&D&&D.valuation)?D.valuation[r.ticker]:null;r.pe_pctile=nbVl?nbVl.pe_percentile:null;r.ma_map_price=r.price;r.ma_map_200=null;r.ma_map_150=null;r.ma_map_50=null;rows.push(r);continue;}
+    if(!bp||!bp.group_a){r.bp_stage="";r.ga=false;r.gc=false;r.t1=false;r.t2=false;r.t1_pct=null;r.t2_pct=null;r.bp_score=0;r.bp_flat_pass=false;r.bp_vol_pass=false;r.bp_time_pass=false;r.bp_slope_200=null;r.bp_slope_150=null;r.bp_vol_ratio=null;r.bp_days_since_drop=null;r.bp_loose_hist=[];r.bp_loose_passed=0;r.bp_loose_total=0;r.bp_loose_streak=0;r.bp_loose_pct=0;r.bp_tight_streak=0;r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";r.vcp_s2=r.f.vcp?r.f.vcp.stage_2_uptrend:false;r.utr_stage2=r.f.uptrend_retest?r.f.uptrend_retest.stage:"";r.ssem_rating=(typeof ssemRatingMap!=="undefined"&&ssemRatingMap[r.ticker])?ssemRatingMap[r.ticker]:"-";var nbVl=(typeof D!=="undefined"&&D&&D.valuation)?D.valuation[r.ticker]:null;r.pe_pctile=nbVl?nbVl.pe_percentile:null;r.ma_map_price=r.price;r.ma_map_200=null;r.ma_map_150=null;r.ma_map_50=null;rows.push(r);continue;}
     r.bp_stage=bp.stage;r.ga=bp.group_a.pass;r.gc=bp.group_c.pass;
     r.t1=bp.group_a.tests.T1;r.t2=bp.group_a.tests.T2;
+    // Pass B (03-May-26): composite + 3 new tests
+    r.bp_score=bp.score!=null?bp.score:0;
+    r.bp_flat_pass=bp.flat_mas_pass===true;
+    r.bp_vol_pass=bp.vol_contraction_pass===true;
+    r.bp_time_pass=bp.time_in_base_pass===true;
+    r.bp_slope_200=bp.slope_200;r.bp_slope_150=bp.slope_150;r.bp_vol_ratio=bp.vol_ratio;r.bp_days_since_drop=bp.days_since_drop;
     // Duration history (per Pass-A: only Loose surfaced; Tight retained for Deep Base tile)
     r.bp_loose_hist=bp.group_a.history||[];r.bp_loose_passed=bp.group_a.days_passed||0;r.bp_loose_total=bp.group_a.days_total||0;r.bp_loose_streak=bp.group_a.streak||0;
     r.bp_loose_pct=r.bp_loose_total>0?(r.bp_loose_passed/r.bp_loose_total):0;
@@ -2135,30 +2192,40 @@ function renderBP(){
   }
   rows=sortData(rows,currentSort.col,currentSort.dir);
   var totalCount=allRows.length;
-  var cap=0,lat=0,ear=0,non=0;
-  for(var j=0;j<rows.length;j++){var s=rows[j].bp_stage;if(s==="Capital")cap++;else if(s==="Late")lat++;else if(s==="Early")ear++;else non++}
+  // Pass B: count by composite score (4=GOLD/Capital, 3=SILVER/Late, 2=BRONZE/Early, 1=Base-Only, 0=None)
+  // Plus separate Deep Base count (Tight pass \u2014 long-horizon monitor, may overlap with above).
+  var gold=0,silver=0,bronze=0,baseOnly=0,nada=0,deep=0;
+  for(var j=0;j<rows.length;j++){
+    var rj=rows[j], scj=rj.bp_score||0;
+    if(scj===4)gold++;else if(scj===3)silver++;else if(scj===2)bronze++;else if(scj===1)baseOnly++;else nada++;
+    if(rj.gc)deep++;
+  }
   var h='<div class="summary-tile" id="section-summary"><h3>Basing Plateau &mdash; Stage 1 Detection Screen</h3>'
-    +'<div class="sub">Basing (\u00b115%) = Loose MA convergence + 3-month duration | Tight (\u00b15%) tracked for Deep Base monitor</div>'
-    +'<div class="summary-stats">'+sumStat("Tight/Capital",xyFmt(cap,rows.length),"green")+sumStat("Loose+Med/Late",xyFmt(lat,rows.length),"amber")+sumStat("Loose only/Early",ear)+sumStat("None",non)+sumStat("Shown",xyFmt(rows.length,totalCount))+'</div></div>';
+    +'<div class="sub">Composite of 4 orthogonal tests: Basing (\u00b115% MA convergence + 3mo duration) + Flat MAs + Volume Contraction + Time-in-Base. 4=GOLD, 3=SILVER, 2=BRONZE.</div>'
+    +'<div class="summary-stats">'+sumStat("GOLD (4/4)",xyFmt(gold,rows.length),"green")+sumStat("SILVER (3/4)",xyFmt(silver,rows.length),"amber")+sumStat("BRONZE (2/4)",bronze)+sumStat("Base Only (1/4)",baseOnly)+sumStat("Deep Base (Tight)",deep)+sumStat("Shown",xyFmt(rows.length,totalCount))+'</div></div>';
   var bpGroupDefs=[{key:"ga",label:"Basing (\u00b115%)"},{key:"gc",label:"Deep Base \u2014 Tight (\u00b15%)"}];
   h+=buildIndSecTables(applyIndSecFilter(allRows),bpGroupDefs);
 
   function bpHeaders(){
-    // Pass A.1 (03-May-26): order = MA Range -> Basing test -> Duration -> Cross-filter refs.
-    // 3(common) + 1(MA Range 480) + 2(Basing test) + 3(Duration: Streak/%63d/Sparkline)
-    //   + 6(Cross-filter: MM99/PB/VCP/UTR/SSEM/Val) + 8(ratings) = 23
+    // Pass B (03-May-26): adds 3 new tests + BP Score composite.
+    // 3(common) + 1(MA Range) + 1(BP Score) + 1(Basing) + 1(Flat MAs) + 1(Vol) + 1(Time-in-Base)
+    //   + 3(Duration: Streak/%63d/Sparkline) + 6(Cross-filter) + 8(ratings) = 26
     var hdr='<tr class="group-header-row"><th colspan="3"></th><th></th>';
-    hdr+='<th colspan="2" style="background:rgba(50,150,50,0.08)">Basing test (\u00b115%)</th>';
-    hdr+='<th colspan="3" style="background:rgba(50,100,200,0.06)">Duration (last 63 trading days)</th>';
+    hdr+='<th></th>';  // BP Score column
+    hdr+='<th colspan="4" style="background:rgba(50,150,50,0.08)">Stage 1 tests (4 orthogonal)</th>';
+    hdr+='<th colspan="3" style="background:rgba(50,100,200,0.06)">Basing duration (last 63 trading days)</th>';
     hdr+='<th colspan="6" style="background:rgba(120,80,160,0.06)">Cross-filter stage</th>';
     hdr+=ratingsColHeaders().length>0?'<th colspan="8" class="col-ratings">Ratings</th>':"";
     hdr+='</tr><tr class="col-header-row">';
     hdr+=bpCommonCols()
       +th("MA Range","ma_map_price","col-filter","Visual: relative positions of Price, 200D, 150D, 50D MAs","width:480px")
-      +th("P~200","t1_pct","col-filter","Price within 15% of 200D MA","width:50px")
-      +th("50~200","t2_pct","col-filter","50D MA within 15% of 200D MA","width:50px")
-      +th("Streak","bp_loose_streak","col-filter","Consecutive trading days currently meeting the Basing test (walking back from today). Higher = more mature base.","width:60px")
-      +th("%/63d","bp_loose_pct","col-filter","Fraction of last 63 trading days the Basing test passed (95% gate = qualifies)","width:60px")
+      +th("BP Score","bp_score","col-filter","Composite 0-4: Basing + Flat MAs + Vol Contraction + Time-in-Base. 4=Capital, 3=Late, 2=Early. Default sort key.","width:80px")
+      +th("Basing","bp_basing_pass","col-filter","Test 1: \u00b115% MA convergence + 3-month duration","width:50px")
+      +th("Flat MAs","bp_flat_pass","col-filter","Test 2: 200D slope \u2264\u00b12% AND 150D slope \u2264\u00b14% (annualised). Rules out stocks coasting through MAs in transit.","width:50px")
+      +th("Vol Contr","bp_vol_pass","col-filter","Test 3: avg L3M volume / avg L12M volume < 0.90. Minervini accumulation marker.","width:50px")
+      +th("Time-in","bp_time_pass","col-filter","Test 4: \u226560 trading days since last 20% drop AND no recent MM99 Capital. Genuine new base.","width:50px")
+      +th("Streak","bp_loose_streak","col-filter","Consecutive trading days currently meeting the Basing test. Higher = more mature base.","width:60px")
+      +th("%/63d","bp_loose_pct","col-filter","Fraction of last 63 trading days the Basing test passed (95% gate = qualifies).","width:60px")
       +th("Duration","bp_loose_streak","col-filter","Per-day pass/fail visual: 63 bars, oldest left, latest right. Green = test passed that day. Major ticks = months (22d), minor = weeks (5d).","width:140px")
       +th("MM 99","mm_stage","col-txt col-ref","MM99 filter stage","width:48px")
       +th("PB","pb_stage2","col-txt col-ref","Probing Bet filter stage","width:48px")
@@ -2183,13 +2250,31 @@ function renderBP(){
     if(r.pe_pctile!=null){
       var pct=Math.round(r.pe_pctile);
       var col=pct<=25?'#1b5e20':pct<=50?'#2e7d32':pct<=75?'#8d6e00':'#c62828';
-      valCell='<span style="color:'+col+';font-weight:600;font-variant-numeric:tabular-nums">'+pct+'</span>';
+      valCell='<span style="color:'+col+';font-weight:600;font-variant-numeric:tabular-nums">'+pct+'<span style="font-weight:400;font-size:9px;margin-left:1px">pct</span></span>';
     } else {valCell='<span style="color:#999">&mdash;</span>';}
+    // Pass A.2: 3-tier basing test cells, conditional streak + %63d colouring
+    var sCol = bpStreakColour(r.bp_loose_streak||0);
+    var pCol = bpPctColour(r.bp_loose_pct||0);
+    var streakHtml = r.bp_loose_streak>0
+      ? '<td class="col-num col-filter" style="background:'+sCol.bg+';color:'+sCol.fg+';font-weight:600;font-variant-numeric:tabular-nums">'+r.bp_loose_streak+'d</td>'
+      : '<td class="col-num col-filter" style="color:#bbb">0d</td>';
+    var pctHtml = r.bp_loose_total>0
+      ? '<td class="col-num col-filter" style="background:'+pCol.bg+';color:'+pCol.fg+';font-variant-numeric:tabular-nums">'+Math.round(r.bp_loose_pct*100)+'%</td>'
+      : '<td class="col-num col-filter">&mdash;</td>';
+    // Pass B: BP Score + 4 individual test cells (binary tick/cross)
+    var sc = r.bp_score!=null ? r.bp_score : 0;
+    var scoreHtml = '<td class="col-filter">'+scorePips(sc, 4)+' <span style="margin-left:4px;font-weight:600;font-variant-numeric:tabular-nums">'+sc+'/4</span></td>';
+    var basingPass = r.ga===true;
+    var flatPass = r.bp_flat_pass===true;
+    var volPass = r.bp_vol_pass===true;
+    var timePass = r.bp_time_pass===true;
+    function passCell(p){return p ? '<td class="col-filter" style="text-align:center"><span class="tick">&#10003;</span></td>' : '<td class="col-filter" style="text-align:center"><span class="cross">&#10007;</span></td>';}
     return'<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+bpCommonTds(r)
       +'<td class="col-filter">'+buildMAMap(r.ma_map_price,r.ma_map_200,r.ma_map_150,r.ma_map_50)+'</td>'
-      +testCell(r.t1,r.t1_pct,"col-filter")+testCell(r.t2,r.t2_pct,"col-filter")
-      +'<td class="col-num col-filter" style="font-weight:600;font-variant-numeric:tabular-nums">'+(r.bp_loose_streak>0?r.bp_loose_streak+"d":'<span style="color:#999;font-weight:400">0d</span>')+'</td>'
-      +'<td class="col-num col-filter" style="font-variant-numeric:tabular-nums">'+(r.bp_loose_total>0?Math.round(r.bp_loose_pct*100)+"%":"&mdash;")+'</td>'
+      +scoreHtml
+      +passCell(basingPass)+passCell(flatPass)+passCell(volPass)+passCell(timePass)
+      +streakHtml
+      +pctHtml
       +'<td class="col-filter">'+bpDaysPipsCompact(r.bp_loose_hist)+'</td>'
       +'<td class="col-txt col-ref">'+badge(r.mm_stage)+'</td>'
       +'<td class="col-txt col-ref">'+badge(r.pb_stage2)+'</td>'
@@ -2201,7 +2286,7 @@ function renderBP(){
   }
   var posRowsBP=applyIndSecFilter(filterToPositions(allRows));
   // Enrich position rows with BP data (they may not have been enriched if filtered out)
-  for(var pk=0;pk<posRowsBP.length;pk++){var pr=posRowsBP[pk];if(pr.bp_stage===undefined){var bpd=pr.f.basing_plateau;if(!bpd||!bpd.group_a){pr.bp_stage="";pr.ga=false;pr.gc=false;pr.t1=false;pr.t2=false;pr.bp_loose_hist=[];pr.bp_loose_passed=0;pr.bp_loose_total=0;pr.bp_loose_streak=0;pr.bp_loose_pct=0;pr.bp_tight_streak=0;}else{pr.bp_stage=bpd.stage;pr.ga=bpd.group_a.pass;pr.gc=bpd.group_c.pass;pr.t1=bpd.group_a.tests.T1;pr.t2=bpd.group_a.tests.T2;pr.bp_loose_hist=bpd.group_a.history||[];pr.bp_loose_passed=bpd.group_a.days_passed||0;pr.bp_loose_total=bpd.group_a.days_total||0;pr.bp_loose_streak=bpd.group_a.streak||0;pr.bp_loose_pct=pr.bp_loose_total>0?(pr.bp_loose_passed/pr.bp_loose_total):0;pr.bp_tight_streak=bpd.group_c.streak||0;}var m200b=pr.mas?pr.mas["200D"]:null,m150b=pr.mas?pr.mas["150D"]:null,m50b=pr.mas?pr.mas["50D"]:null;pr.t1_pct=m200b?(pr.price-m200b)/m200b:null;pr.t2_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.mm_stage=pr.f.mm99?pr.f.mm99.stage:"";pr.pb_stage2=pr.f.probing_bet?pr.f.probing_bet.stage:"";pr.vcp_s2=pr.f.vcp?pr.f.vcp.stage_2_uptrend:false;pr.utr_stage2=pr.f.uptrend_retest?pr.f.uptrend_retest.stage:"";pr.ssem_rating=(typeof ssemRatingMap!=="undefined"&&ssemRatingMap[pr.ticker])?ssemRatingMap[pr.ticker]:"-";var prVl=(typeof D!=="undefined"&&D&&D.valuation)?D.valuation[pr.ticker]:null;pr.pe_pctile=prVl?prVl.pe_percentile:null;pr.ma_map_price=pr.price;pr.ma_map_200=m200b;pr.ma_map_150=m150b;pr.ma_map_50=m50b;}}
+  for(var pk=0;pk<posRowsBP.length;pk++){var pr=posRowsBP[pk];if(pr.bp_stage===undefined){var bpd=pr.f.basing_plateau;if(!bpd||!bpd.group_a){pr.bp_stage="";pr.ga=false;pr.gc=false;pr.t1=false;pr.t2=false;pr.bp_score=0;pr.bp_flat_pass=false;pr.bp_vol_pass=false;pr.bp_time_pass=false;pr.bp_loose_hist=[];pr.bp_loose_passed=0;pr.bp_loose_total=0;pr.bp_loose_streak=0;pr.bp_loose_pct=0;pr.bp_tight_streak=0;}else{pr.bp_stage=bpd.stage;pr.ga=bpd.group_a.pass;pr.gc=bpd.group_c.pass;pr.t1=bpd.group_a.tests.T1;pr.t2=bpd.group_a.tests.T2;pr.bp_score=bpd.score!=null?bpd.score:0;pr.bp_flat_pass=bpd.flat_mas_pass===true;pr.bp_vol_pass=bpd.vol_contraction_pass===true;pr.bp_time_pass=bpd.time_in_base_pass===true;pr.bp_loose_hist=bpd.group_a.history||[];pr.bp_loose_passed=bpd.group_a.days_passed||0;pr.bp_loose_total=bpd.group_a.days_total||0;pr.bp_loose_streak=bpd.group_a.streak||0;pr.bp_loose_pct=pr.bp_loose_total>0?(pr.bp_loose_passed/pr.bp_loose_total):0;pr.bp_tight_streak=bpd.group_c.streak||0;}var m200b=pr.mas?pr.mas["200D"]:null,m150b=pr.mas?pr.mas["150D"]:null,m50b=pr.mas?pr.mas["50D"]:null;pr.t1_pct=m200b?(pr.price-m200b)/m200b:null;pr.t2_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.mm_stage=pr.f.mm99?pr.f.mm99.stage:"";pr.pb_stage2=pr.f.probing_bet?pr.f.probing_bet.stage:"";pr.vcp_s2=pr.f.vcp?pr.f.vcp.stage_2_uptrend:false;pr.utr_stage2=pr.f.uptrend_retest?pr.f.uptrend_retest.stage:"";pr.ssem_rating=(typeof ssemRatingMap!=="undefined"&&ssemRatingMap[pr.ticker])?ssemRatingMap[pr.ticker]:"-";var prVl=(typeof D!=="undefined"&&D&&D.valuation)?D.valuation[pr.ticker]:null;pr.pe_pctile=prVl?prVl.pe_percentile:null;pr.ma_map_price=pr.price;pr.ma_map_200=m200b;pr.ma_map_150=m150b;pr.ma_map_50=m50b;}}
   if(posRowsBP.length>0){
     h+='<h3 class="qualified-title" id="section-portfolio">Live Portfolio ('+posRowsBP.length+')</h3>';
     h+='<div class="data-table-wrap" style="margin-bottom:12px"><table class="data-table data-table-portfolio"><thead>'+bpHeaders()+'</thead><tbody>';
@@ -2213,8 +2298,18 @@ function renderBP(){
   h+='<div class="data-table-wrap"><table class="data-table"><thead>'+bpHeaders()+'</thead><tbody>';
   for(var j=0;j<rows.length;j++)h+=bpRow(rows[j]);
   h+='</tbody></table></div>';
-  h+=buildQualTilesV2(applyIndSecFilter(allRows),[
-    {key:"ga",label:"Basing (\u00b115%) \u2014 Loose"},
+  // Pass B: tag tier-flags onto allRows for qualification tiles (GOLD/SILVER/BRONZE/Base-Only/Deep)
+  var allWithTier=applyIndSecFilter(allRows);
+  for(var ti=0;ti<allWithTier.length;ti++){
+    var tr=allWithTier[ti], tsc=tr.bp_score!=null?tr.bp_score:0;
+    tr._gold=(tsc===4);tr._silver=(tsc===3);tr._bronze=(tsc===2);tr._baseonly=(tsc===1);
+    // _deep already covered by tr.gc (Tight test pass)
+  }
+  h+=buildQualTilesV2(allWithTier,[
+    {key:"_gold",label:"GOLD (4/4) \u2014 all 4 Stage 1 tests pass"},
+    {key:"_silver",label:"SILVER (3/4) \u2014 3 of 4 tests pass"},
+    {key:"_bronze",label:"BRONZE (2/4) \u2014 2 of 4 tests pass"},
+    {key:"_baseonly",label:"Base Only (1/4) \u2014 Basing test only, reference"},
     {key:"gc",label:"Deep Base (\u00b15%) \u2014 Tight, long-horizon monitor"}
   ],totalCount,bpHeaders,bpRow);
   document.getElementById("tab-bp").innerHTML=h;
@@ -3204,6 +3299,37 @@ function ssemRowHTML(r) {
   return h;
 }
 
+// Pass A.2: precompute ssemRatingMap at startup so cross-tab consumers (BP, etc.)
+// can read SSEM ratings before user visits SSEM tab. Mirrors the data-prep block
+// in renderSSEM() up to the rating assignment, then populates the global map.
+function precomputeSsemRatings(){
+  if(!D.ssem) return;
+  var allRows = baseRows();
+  var rowsAll = [];
+  for(var j=0;j<allRows.length;j++){
+    var r = allRows[j];
+    var ss = D.ssem[r.ticker];
+    if(!ss) continue;
+    r.eps_1m=ss.eps_rev?ss.eps_rev.L1M:null;r.eps_3m=ss.eps_rev?ss.eps_rev.L3M:null;
+    r.eps_6m=ss.eps_rev?ss.eps_rev.L6M:null;r.eps_12m=ss.eps_rev?ss.eps_rev.L12M:null;
+    r.ebitda_1m=ss.ebitda_rev?ss.ebitda_rev.L1M:null;r.ebitda_3m=ss.ebitda_rev?ss.ebitda_rev.L3M:null;
+    r.ebitda_6m=ss.ebitda_rev?ss.ebitda_rev.L6M:null;r.ebitda_12m=ss.ebitda_rev?ss.ebitda_rev.L12M:null;
+    r.sales_1m=ss.sales_rev?ss.sales_rev.L1M:null;r.sales_3m=ss.sales_rev?ss.sales_rev.L3M:null;
+    r.sales_6m=ss.sales_rev?ss.sales_rev.L6M:null;r.sales_12m=ss.sales_rev?ss.sales_rev.L12M:null;
+    r.tp_1m=ss.tp_rev?ss.tp_rev.L1M:null;r.tp_3m=ss.tp_rev?ss.tp_rev.L3M:null;
+    r.tp_6m=ss.tp_rev?ss.tp_rev.L6M:null;r.tp_12m=ss.tp_rev?ss.tp_rev.L12M:null;
+    r.buy_1m=ss.buy_rev?ss.buy_rev.L1M:null;r.buy_3m=ss.buy_rev?ss.buy_rev.L3M:null;
+    r.buy_6m=ss.buy_rev?ss.buy_rev.L6M:null;r.buy_12m=ss.buy_rev?ss.buy_rev.L12M:null;
+    r.buy_pct=ss.buy_pct;
+    r.momentum=ss.momentum!=null?ss.momentum:null;
+    ssemEnrichRow(r);
+    rowsAll.push(r);
+  }
+  ssemAssignRatings(rowsAll);
+  ssemRatingMap = {};
+  for(var rk=0;rk<rowsAll.length;rk++){ssemRatingMap[rowsAll[rk].ticker]=rowsAll[rk].ssem_rating;}
+}
+
 function renderSSEM(){
   buildHeaderControls("ssem");
   var container=document.getElementById("tab-ssem");
@@ -3394,6 +3520,13 @@ function renderTab(id){
 // Init: hide ratings by default (FIX-3)
 var mainEl=document.querySelector(".main");
 if(mainEl)mainEl.classList.add("ratings-hidden");
+// Pass A.2: default to Company-name display globally — apply company-mode CSS hook
+if(mainEl && displayMode==="company") mainEl.classList.add("company-mode");
+
+// Pass A.2 (03-May-26): precompute SSEM ratings at startup so cross-tab consumers
+// (e.g. BP tab cross-filter SSEM column) populate on first visit, not only after
+// SSEM tab has rendered. Was a known gap in Pass A.1.
+precomputeSsemRatings();
 
 renderTab("mm99");
 })();
@@ -3442,7 +3575,7 @@ renderTab("mm99");
         '  <!-- Row 3: #3 TOGGLES (left) + #4 FILTERS (right) -->\n'
         '  <div class="header-controls-row">\n'
         '    <span class="row-label">#3 Toggles</span>\n'
-        '    <button class="ctrl-btn" id="btn-display-mode" onclick="toggleDisplayMode()">Ticker</button>\n'
+        '    <button class="ctrl-btn active" id="btn-display-mode" onclick="toggleDisplayMode()">Company</button>\n'
         '    <button class="ctrl-btn" id="btn-value-mode" onclick="toggleValueMode()">&#10003;&#10007;</button>\n'
         '    <button class="ctrl-btn" id="btn-ratings" onclick="toggleRatings()">Show case ratings</button><span id="indsec-pills"></span>\n'
         '    <div style="margin-left:auto;display:flex;align-items:center;gap:6px">\n'
