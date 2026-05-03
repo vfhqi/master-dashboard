@@ -1881,8 +1881,15 @@ function buildHeaderControls(tabId){
     h+='</div>';
   } else if(tabId==="bp"){
     h+='<div class="group-toggles">';
-    // Pass A (02-May-26): drop Medium toggle; rename Loose -> Basing; Tight -> Deep Base
-    var bpGrps=[{k:"ga",l:"Basing (\u00b115%)"},{k:"gc",l:"Deep Base (\u00b15%)"}];
+    // Pass A.3 (03-May-26): score-tier toggles GOLD/SILVER/BRONZE/Base/Deep \u2014 match qual tiles + JUMP TO.
+    // Toggle key reuses activeGroups (e.g. "_gold") \u2014 renderBP's row-skip logic reads these.
+    var bpGrps=[
+      {k:"_gold",l:"GOLD (4/4)"},
+      {k:"_silver",l:"SILVER (3/4)"},
+      {k:"_bronze",l:"BRONZE (2/4)"},
+      {k:"_baseonly",l:"Base Only (1/4)"},
+      {k:"gc",l:"Deep Base (Tight)"}
+    ];
     for(var g2=0;g2<bpGrps.length;g2++){
       var act2=activeGroups[bpGrps[g2].k]?" active":"";
       h+='<button class="group-toggle'+act2+'" onclick="toggleGroup(\''+bpGrps[g2].k+'\')">'+bpGrps[g2].l+'</button>';
@@ -1960,7 +1967,7 @@ function buildHeaderControls(tabId){
     var gh="";
     var GROUP_LINKS={
       mm99:[{k:"ga",l:"Long-term"},{k:"gb",l:"Mid-term"},{k:"gc",l:"Short-term"},{k:"gd",l:"Leadership"},{k:"ge",l:"Rel. Strength"}],
-      bp:[{k:"ga",l:"Loose"},{k:"gb",l:"Medium"},{k:"gc",l:"Tight"}],
+      bp:[{k:"_gold",l:"GOLD"},{k:"_silver",l:"SILVER"},{k:"_bronze",l:"BRONZE"},{k:"_baseonly",l:"Base Only"},{k:"gc",l:"Deep Base"}],
       utr:[{k:"early",l:"Early+",fn:"setUtrStageFilter"},{k:"late",l:"Late+",fn:"setUtrStageFilter"},{k:"capital",l:"Capital",fn:"setUtrStageFilter"}],
       pb:[{k:"ga",l:"Early"},{k:"gb",l:"Late"},{k:"gc",l:"Dead Cat"},{k:"gd",l:"PB1"},{k:"ge",l:"PB2"}]
     };
@@ -2183,10 +2190,20 @@ function renderBP(){
     r.pe_pctile=bpVl?bpVl.pe_percentile:null;
     r.ma_map_price=r.price;r.ma_map_200=m200;r.ma_map_150=m150;r.ma_map_50=m50;
 
-    var skip=false;
-    if(activeGroups.ga&&!r.ga)skip=true;
-    if(activeGroups.gc&&!r.gc)skip=true;
-    if(skip)continue;
+    // Pass A.3: filter by score tier (match new GOLD/SILVER/BRONZE/Base Only/Deep Base toggles).
+    // Tag tier flags on row first.
+    var rsc=r.bp_score!=null?r.bp_score:0;
+    r._gold=(rsc===4); r._silver=(rsc===3); r._bronze=(rsc===2); r._baseonly=(rsc===1);
+    var anyTierActive=activeGroups._gold||activeGroups._silver||activeGroups._bronze||activeGroups._baseonly||activeGroups.gc;
+    if(anyTierActive){
+      var keep=false;
+      if(activeGroups._gold && r._gold)keep=true;
+      if(activeGroups._silver && r._silver)keep=true;
+      if(activeGroups._bronze && r._bronze)keep=true;
+      if(activeGroups._baseonly && r._baseonly)keep=true;
+      if(activeGroups.gc && r.gc)keep=true;
+      if(!keep)continue;
+    }
 
     rows.push(r);
   }
@@ -2261,18 +2278,33 @@ function renderBP(){
     var pctHtml = r.bp_loose_total>0
       ? '<td class="col-num col-filter" style="background:'+pCol.bg+';color:'+pCol.fg+';font-variant-numeric:tabular-nums">'+Math.round(r.bp_loose_pct*100)+'%</td>'
       : '<td class="col-num col-filter">&mdash;</td>';
-    // Pass B: BP Score + 4 individual test cells (binary tick/cross)
+    // Pass B: BP Score + 4 individual test cells. Pass A.3: pct-mode shows underlying numeric.
     var sc = r.bp_score!=null ? r.bp_score : 0;
     var scoreHtml = '<td class="col-filter">'+scorePips(sc, 4)+' <span style="margin-left:4px;font-weight:600;font-variant-numeric:tabular-nums">'+sc+'/4</span></td>';
     var basingPass = r.ga===true;
     var flatPass = r.bp_flat_pass===true;
     var volPass = r.bp_vol_pass===true;
     var timePass = r.bp_time_pass===true;
-    function passCell(p){return p ? '<td class="col-filter" style="text-align:center"><span class="tick">&#10003;</span></td>' : '<td class="col-filter" style="text-align:center"><span class="cross">&#10007;</span></td>';}
+    // pctCell: tick mode shows tick/cross; pct mode shows numeric with pass-tinted background.
+    function pctCell(passFlag, numericText){
+      if(valueMode==="pct" && numericText){
+        var bg = passFlag ? 'rgba(46,125,50,0.18)' : 'transparent';
+        var fg = passFlag ? '#1b5e20' : '#888';
+        return '<td class="col-num col-filter" style="background:'+bg+';color:'+fg+';font-variant-numeric:tabular-nums;font-weight:600">'+numericText+'</td>';
+      }
+      return passFlag
+        ? '<td class="col-filter" style="text-align:center"><span class="tick">&#10003;</span></td>'
+        : '<td class="col-filter" style="text-align:center"><span class="cross">&#10007;</span></td>';
+    }
+    // Numerics for pct mode
+    var basingNum = (r.t1_pct!=null) ? fpc1(r.t1_pct) : null;  // Price ~ 200D %
+    var flatNum = (r.bp_slope_200!=null) ? fpc1(r.bp_slope_200) : null;  // 200D slope annualised
+    var volNum = (r.bp_vol_ratio!=null) ? Math.round(r.bp_vol_ratio*100)+'%' : null;  // L3M/L12M ratio
+    var timeNum = (r.bp_days_since_drop!=null) ? r.bp_days_since_drop+'d' : null;  // days since 20% drop
     return'<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+bpCommonTds(r)
       +'<td class="col-filter">'+buildMAMap(r.ma_map_price,r.ma_map_200,r.ma_map_150,r.ma_map_50)+'</td>'
       +scoreHtml
-      +passCell(basingPass)+passCell(flatPass)+passCell(volPass)+passCell(timePass)
+      +pctCell(basingPass, basingNum)+pctCell(flatPass, flatNum)+pctCell(volPass, volNum)+pctCell(timePass, timeNum)
       +streakHtml
       +pctHtml
       +'<td class="col-filter">'+bpDaysPipsCompact(r.bp_loose_hist)+'</td>'

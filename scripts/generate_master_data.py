@@ -494,7 +494,7 @@ def build_prices_json(universe, raw_data, benchmark_rows):
 
         # T-NEW-1: MA slope flatness (annualised)
         # slope = (sma_today - sma_63d_ago) / sma_63d_ago * (252/63) = annualised
-        # Pass if abs(slope_200) <= 0.02 AND abs(slope_150) <= 0.04
+        # Pass if abs(slope_200) <= 0.05 AND abs(slope_150) <= 0.08 (loosened in Pass A.3)
         if len(rows_with_sma) >= 64:
             sma_200_today = rows_with_sma[-1].get("sma_200")
             sma_150_today = rows_with_sma[-1].get("sma_150")
@@ -507,8 +507,11 @@ def build_prices_json(universe, raw_data, benchmark_rows):
                 slope_150 = (sma_150_today - sma_150_prior) / sma_150_prior * (252.0 / 63.0)
                 bp_extras["slope_150"] = round(slope_150, 4)
             if bp_extras["slope_200"] is not None and bp_extras["slope_150"] is not None:
+                # Pass A.3 (03-May-26): loosened from ±2%/±4% to ±5%/±8% per Richard.
+                # Original ±2% caught only 5% of universe (most stocks have mild trend drift in
+                # current Iran-driven environment). ±5% on 200D is still genuinely flat (5%/yr ≈ barely ticking).
                 bp_extras["flat_mas_pass"] = (
-                    abs(bp_extras["slope_200"]) <= 0.02 and abs(bp_extras["slope_150"]) <= 0.04
+                    abs(bp_extras["slope_200"]) <= 0.05 and abs(bp_extras["slope_150"]) <= 0.08
                 )
 
         # T-NEW-2: Volume contraction — avg L3M vol / avg L12M vol < 0.90
