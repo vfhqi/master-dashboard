@@ -357,6 +357,13 @@ table.data-table td.col-identity{white-space:nowrap}
 .score-bar .pip{width:6px;height:12px;border-radius:2px}
 .pip-on{background:var(--green)}.pip-off{background:#e0ddd3}
 .pip-amber{background:var(--amber)}
+/* BP daily duration strip — 63 bars (3 trading months) per group, narrower pip so 3 groups fit */
+.bp-days-bar{display:inline-flex;gap:0;vertical-align:middle;align-items:center;line-height:1}
+.bp-days-bar .day-pip{width:2px;height:11px;border-radius:0}
+.day-pip-on{background:var(--green)}.day-pip-off{background:#e8e5d8}
+.bp-days-frac{margin-left:5px;font-size:10px;color:#555;font-variant-numeric:tabular-nums}
+.bp-days-streak{margin-left:4px;font-size:10px;font-weight:600;color:#1b5e20;font-variant-numeric:tabular-nums}
+.bp-days-streak-zero{color:#999;font-weight:400}
 .signal-bar{display:inline-flex;gap:1px;vertical-align:middle}
 .signal-bar .seg{width:12px;height:16px;border-radius:2px}
 .seg-pass{background:var(--green)}.seg-fail{background:var(--red-dim)}.seg-amber{background:var(--amber-dim)}
@@ -1202,6 +1209,19 @@ function scorePips(s,m){var h='<div class="score-bar">';for(var j=0;j<m;j++)h+='
 // Score pips mapped to individual test results (each pip = one test)
 function testPips(tests){var h='<div class="score-bar">';for(var j=0;j<tests.length;j++)h+='<div class="pip '+(tests[j]?'pip-on':'pip-off')+'"></div>';return h+'</div>'}
 function monthsPips(hist,count){var h='<div class="score-bar">';for(var j=0;j<hist.length;j++)h+='<div class="pip '+(hist[j]?'pip-on':'pip-off')+'"></div>';return h+' <span style="margin-left:4px;font-weight:600">'+count+'/12</span></div>'}
+// BP daily duration strip: 63 daily pass/fail pips (oldest left, latest right)
+// + streak (consecutive days currently meeting the test, walking back from today)
+// + X/63 fraction. hist: array of bool (oldest first); passed: int; total: int; streak: int.
+function bpDaysPips(hist,passed,total,streak){
+  if(!hist||hist.length===0)return'<span style="color:#999">&mdash;</span>';
+  var h='<div class="bp-days-bar"><div style="display:inline-flex;gap:0">';
+  for(var j=0;j<hist.length;j++)h+='<div class="day-pip '+(hist[j]?'day-pip-on':'day-pip-off')+'"></div>';
+  h+='</div>';
+  h+='<span class="bp-days-frac">'+passed+'/'+total+'</span>';
+  var sc=streak>0?"bp-days-streak":"bp-days-streak bp-days-streak-zero";
+  h+='<span class="'+sc+'" title="Consecutive days currently meeting the test">'+streak+'d</span>';
+  h+='</div>';return h;
+}
 function signalBar(sigs){var h='<div class="signal-bar">';for(var j=0;j<sigs.length;j++){var c=sigs[j]==="pass"?"seg-pass":sigs[j]==="amber"?"seg-amber":"seg-fail";h+='<div class="seg '+c+'"></div>'}return h+'</div>'}
 
 function addCommas(s){var p=s.split(".");var i=p[0];var d=p.length>1?"."+p[1]:"";var r="";var c=0;for(var j=i.length-1;j>=0;j--){if(c>0&&c%3===0)r=","+r;r=i.charAt(j)+r;c++}return r+d}
@@ -1820,7 +1840,8 @@ function buildHeaderControls(tabId){
     h+='</div>';
   } else if(tabId==="bp"){
     h+='<div class="group-toggles">';
-    var bpGrps=[{k:"ga",l:"Loose Plateau (\u00b115%)"},{k:"gb",l:"Medium Plateau (\u00b110%)"},{k:"gc",l:"Tight Plateau (\u00b15%)"}];
+    // Pass A (02-May-26): drop Medium toggle; rename Loose -> Basing; Tight -> Deep Base
+    var bpGrps=[{k:"ga",l:"Basing (\u00b115%)"},{k:"gc",l:"Deep Base (\u00b15%)"}];
     for(var g2=0;g2<bpGrps.length;g2++){
       var act2=activeGroups[bpGrps[g2].k]?" active":"";
       h+='<button class="group-toggle'+act2+'" onclick="toggleGroup(\''+bpGrps[g2].k+'\')">'+bpGrps[g2].l+'</button>';
@@ -2051,39 +2072,55 @@ window.setUtrFailedFilter=function(f){utrFailedFilter=(utrFailedFilter===f)?"":f
 window.toggleUtrInputs=function(){utrShowInputs=!utrShowInputs;renderTab("utr")};
 
 // ================================================================
-// BASING PLATEAU TAB
-// FIX-12: testCell used for BP test columns
-// FIX-15: Separate % columns removed -- testCell handles both modes
+// BASING PLATEAU TAB \u2014 Pass A simplified (02-May-26)
+// Drop Medium UI; rename Loose -> Basing; drop Inputs cols (BP-tab specific
+// commonCols variant: Ticker + Sector only); double MA Range sparkline width;
+// split Duration into 3 cols (Streak / %63d / Sparkline); keep Tight in
+// pipeline but surface as separate "Deep Base" tile only.
+// Cross-tab compat: bp.stage still returns Capital/Late/Early/None during
+// Pass A (downstream TIMELINESS + Combos tabs unchanged). Pass B replaces
+// the stage logic with composite-score mapping (D-MD-FILTER-12).
 // ================================================================
+function bpCommonCols(){
+  // BP-specific: drop the 7 Inputs cols (52WH/52WL/20D/50D/150D/200D/RS).
+  // Ticker + Sector + Price only -- MA Range sparkline + tests carry the rest.
+  var tkrW=displayMode==="company"?"width:140px;max-width:180px":"width:90px";
+  return th("Ticker","_display_name","col-txt col-identity","Stock ticker or company name (toggle in header)",tkrW)
+    +th("Sector","_tax_sector","col-txt col-identity","Industry sector classification","width:200px;max-width:200px")
+    +th("Price","price","col-num col-price","Current stock price","width:52px");
+}
+function bpCommonTds(r){
+  var tax=getTaxonomy(r.ticker);
+  var dn=(displayMode==="company")?(r.company||r.ticker):r.ticker;
+  var tkrTd='<td class="col-txt col-identity"';
+  if(displayMode==="company"){tkrTd+=' title="'+(r.company||r.ticker).replace(/"/g,"&quot;")+'" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"';}
+  tkrTd+='>'+dn+'</td>';
+  var sec=(tax&&tax.sector)||r.sector||"";
+  return tkrTd
+    +'<td class="col-txt col-identity" title="'+sec.replace(/"/g,"&quot;")+'" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+sec+'</td>'
+    +'<td class="col-num col-price">'+fp(r.price)+'</td>';
+}
 function renderBP(){
   buildHeaderControls("bp");
   var allRows=baseRows();
   var rows=[];
   for(var j=0;j<allRows.length;j++){
     var r=allRows[j],bp=r.f.basing_plateau;
-    if(!bp||!bp.group_a){r.bp_stage="";r.ga=false;r.gb=false;r.gc=false;r.t1=false;r.t2=false;r.t3=false;r.t4=false;r.t5=false;r.t6=false;r.t7=false;r.t8=false;r.t1_pct=null;r.t2_pct=null;r.t3_pct=null;r.t4_pct=null;r.t5_pct=null;r.t6_pct=null;r.t7_pct=null;r.t8_pct=null;r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";r.ma_map_price=r.price;r.ma_map_200=null;r.ma_map_150=null;r.ma_map_50=null;rows.push(r);continue;}
-    r.bp_stage=bp.stage;r.ga=bp.group_a.pass;r.gb=bp.group_b.pass;r.gc=bp.group_c.pass;
+    if(!bp||!bp.group_a){r.bp_stage="";r.ga=false;r.gc=false;r.t1=false;r.t2=false;r.t1_pct=null;r.t2_pct=null;r.bp_loose_hist=[];r.bp_loose_passed=0;r.bp_loose_total=0;r.bp_loose_streak=0;r.bp_loose_pct=0;r.bp_tight_streak=0;r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";r.ma_map_price=r.price;r.ma_map_200=null;r.ma_map_150=null;r.ma_map_50=null;rows.push(r);continue;}
+    r.bp_stage=bp.stage;r.ga=bp.group_a.pass;r.gc=bp.group_c.pass;
     r.t1=bp.group_a.tests.T1;r.t2=bp.group_a.tests.T2;
-    r.t3=bp.group_b.tests.T3;r.t4=bp.group_b.tests.T4;r.t5=bp.group_b.tests.T5;
-    r.t6=bp.group_c.tests.T6;r.t7=bp.group_c.tests.T7;r.t8=bp.group_c.tests.T8;
+    // Duration history (per Pass-A: only Loose surfaced; Tight retained for Deep Base tile)
+    r.bp_loose_hist=bp.group_a.history||[];r.bp_loose_passed=bp.group_a.days_passed||0;r.bp_loose_total=bp.group_a.days_total||0;r.bp_loose_streak=bp.group_a.streak||0;
+    r.bp_loose_pct=r.bp_loose_total>0?(r.bp_loose_passed/r.bp_loose_total):0;
+    r.bp_tight_streak=bp.group_c.streak||0;
     var m200=r.mas?r.mas["200D"]:null,m150=r.mas?r.mas["150D"]:null,m50=r.mas?r.mas["50D"]:null;
-
-    // FIX-12: Compute pct values for BP testCell
-    r.t1_pct=m200?(r.price-m200)/m200:null;       // P~200D
-    r.t2_pct=(m50&&m200)?(m50-m200)/m200:null;     // 50~200D
-    r.t3_pct=m200?(r.price-m200)/m200:null;         // P~200D (tighter)
-    r.t4_pct=(m50&&m200)?(m50-m200)/m200:null;     // 50~200D (tighter)
-    r.t5_pct=(m150&&m200)?(m150-m200)/m200:null;   // 150~200D
-    r.t6_pct=m200?(r.price-m200)/m200:null;         // P~200D (tightest)
-    r.t7_pct=(m50&&m200)?(m50-m200)/m200:null;     // 50~200D (tightest)
-    r.t8_pct=(m150&&m200)?(m150-m200)/m200:null;   // 150~200D (tightest)
-
+    r.t1_pct=m200?(r.price-m200)/m200:null;
+    r.t2_pct=(m50&&m200)?(m50-m200)/m200:null;
     r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";
     r.ma_map_price=r.price;r.ma_map_200=m200;r.ma_map_150=m150;r.ma_map_50=m50;
 
     var skip=false;
     if(activeGroups.ga&&!r.ga)skip=true;
-    if(activeGroups.gb&&!r.gb)skip=true;
     if(activeGroups.gc&&!r.gc)skip=true;
     if(skip)continue;
 
@@ -2093,43 +2130,42 @@ function renderBP(){
   var totalCount=allRows.length;
   var cap=0,lat=0,ear=0,non=0;
   for(var j=0;j<rows.length;j++){var s=rows[j].bp_stage;if(s==="Capital")cap++;else if(s==="Late")lat++;else if(s==="Early")ear++;else non++}
-  var h='<div class="summary-tile" id="section-summary"><h3>Basing Plateau &mdash; Sideways Consolidation Screen</h3>'
-    +'<div class="sub">Loose (&plusmn;15%) = Early | Medium (&plusmn;10%) = Late | Tight (&plusmn;5%) = Capital</div>'
-    +'<div class="summary-stats">'+sumStat("Tight/Capital",xyFmt(cap,rows.length),"green")+sumStat("Medium/Late",xyFmt(lat,rows.length),"amber")+sumStat("Loose/Early",ear)+sumStat("None",non)+sumStat("Shown",xyFmt(rows.length,totalCount))+'</div></div>';
-  // FIX-S4-TILES: Group defs for BP industry/sector tiles
-  var bpGroupDefs=[{key:"ga",label:"Loose Plateau"},{key:"gb",label:"Medium Plateau"},{key:"gc",label:"Tight Plateau"}];
+  var h='<div class="summary-tile" id="section-summary"><h3>Basing Plateau &mdash; Stage 1 Detection Screen</h3>'
+    +'<div class="sub">Basing (\u00b115%) = Loose MA convergence + 3-month duration | Tight (\u00b15%) tracked for Deep Base monitor</div>'
+    +'<div class="summary-stats">'+sumStat("Tight/Capital",xyFmt(cap,rows.length),"green")+sumStat("Loose+Med/Late",xyFmt(lat,rows.length),"amber")+sumStat("Loose only/Early",ear)+sumStat("None",non)+sumStat("Shown",xyFmt(rows.length,totalCount))+'</div></div>';
+  var bpGroupDefs=[{key:"ga",label:"Basing (\u00b115%)"},{key:"gc",label:"Deep Base \u2014 Tight (\u00b15%)"}];
   h+=buildIndSecTables(applyIndSecFilter(allRows),bpGroupDefs);
 
-  // FIX-2: Qualified Stocks title
   function bpHeaders(){
-    // BP: 10(common) + 1(MA Range) + 2(Loose) + 3(Medium) + 3(Tight) + 2(refs) + 8(ratings) = 29
-    var hdr='<tr class="group-header-row"><th colspan="2"></th><th colspan="7" style="background:rgba(100,100,100,0.06)">Inputs</th><th></th><th></th>';
-    hdr+='<th colspan="2" style="background:rgba(50,100,200,0.08)">Loose Plateau (\u00b115%)</th>';
-    hdr+='<th colspan="3" style="background:rgba(200,150,0,0.08)">Medium Plateau (\u00b110%)</th>';
-    hdr+='<th colspan="3" style="background:rgba(50,150,50,0.08)">Tight Plateau (\u00b15%)</th>';
+    // Pass A: 3(common: Tkr/Sec/Price) + 1(MA Range 480px) + 3(Streak/%63d/Sparkline) + 2(P~200/50~200) + 2(refs MM99/PB) + 8(ratings) = 19
+    var hdr='<tr class="group-header-row"><th colspan="3"></th><th></th>';
+    hdr+='<th colspan="3" style="background:rgba(50,100,200,0.06)">Duration (last 63 trading days)</th>';
+    hdr+='<th colspan="2" style="background:rgba(50,150,50,0.08)">Basing test (\u00b115%)</th>';
     hdr+='<th colspan="2"></th>';
     hdr+=ratingsColHeaders().length>0?'<th colspan="8" class="col-ratings">Ratings</th>':"";
     hdr+='</tr><tr class="col-header-row">';
-    // FIX: MA Range 3x wider, test columns narrower
-    hdr+=commonCols()+th("MA Range","ma_map_price","col-filter","Visual: relative positions of Price, 200D, 150D, 50D MAs","width:240px")
-      +th("P~200","t1_pct","col-filter grp-loose-first","Price within 15% of 200D MA","width:50px")+th("50~200","t2_pct","col-filter grp-loose-last","50D within 15% of 200D MA","width:50px")
-      +th("P~200","t3_pct","col-filter grp-med-first","Price within 10% of 200D MA","width:50px")+th("50~200","t4_pct","col-filter","50D within 10% of 200D MA","width:50px")+th("150~200","t5_pct","col-filter grp-med-last","150D within 10% of 200D MA","width:55px")
-      +th("P~200","t6_pct","col-filter grp-tight-first","Price within 5% of 200D MA","width:50px")+th("50~200","t7_pct","col-filter","50D within 5% of 200D MA","width:50px")+th("150~200","t8_pct","col-filter grp-tight-last","150D within 5% of 200D MA","width:55px")
+    hdr+=bpCommonCols()+th("MA Range","ma_map_price","col-filter","Visual: relative positions of Price, 200D, 150D, 50D MAs","width:480px")
+      +th("Streak","bp_loose_streak","col-filter","Consecutive trading days currently meeting the Basing test (walking back from today). Higher = more mature base. Sort desc by default in Pass B.","width:60px")
+      +th("%/63d","bp_loose_pct","col-filter","Fraction of last 63 trading days the Basing test passed (95% gate = qualifies)","width:60px")
+      +th("Duration","bp_loose_streak","col-filter","Per-day pass/fail visual: 63 thin bars, oldest left, latest right. Green = test passed that day.","width:140px")
+      +th("P~200","t1_pct","col-filter","Price within 15% of 200D MA","width:50px")
+      +th("50~200","t2_pct","col-filter","50D MA within 15% of 200D MA","width:50px")
       +th("MM 99","mm_stage","col-txt col-ref","MM99 filter stage")+th("Probing Bet","pb_stage2","col-txt col-ref","Probing Bet filter stage")+ratingsColHeaders();
     hdr+='</tr>';return hdr;
   }
   function bpRow(r){
-    return'<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+commonTds(r)
+    return'<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+bpCommonTds(r)
       +'<td class="col-filter">'+buildMAMap(r.ma_map_price,r.ma_map_200,r.ma_map_150,r.ma_map_50)+'</td>'
-      +testCell(r.t1,r.t1_pct,"col-filter grp-loose-first")+testCell(r.t2,r.t2_pct,"col-filter grp-loose-last")
-      +testCell(r.t3,r.t3_pct,"col-filter grp-med-first")+testCell(r.t4,r.t4_pct,"col-filter")+testCell(r.t5,r.t5_pct,"col-filter grp-med-last")
-      +testCell(r.t6,r.t6_pct,"col-filter grp-tight-first")+testCell(r.t7,r.t7_pct,"col-filter")+testCell(r.t8,r.t8_pct,"col-filter grp-tight-last")
+      +'<td class="col-num col-filter" style="font-weight:600;font-variant-numeric:tabular-nums">'+(r.bp_loose_streak>0?r.bp_loose_streak+"d":'<span style="color:#999;font-weight:400">0d</span>')+'</td>'
+      +'<td class="col-num col-filter" style="font-variant-numeric:tabular-nums">'+(r.bp_loose_total>0?Math.round(r.bp_loose_pct*100)+"%":"&mdash;")+'</td>'
+      +'<td class="col-filter">'+bpDaysPipsCompact(r.bp_loose_hist)+'</td>'
+      +testCell(r.t1,r.t1_pct,"col-filter")+testCell(r.t2,r.t2_pct,"col-filter")
       +'<td class="col-txt col-ref">'+badge(r.mm_stage)+'</td><td class="col-txt col-ref">'+badge(r.pb_stage2)+'</td>'
       +ratingsColTds(r)+'</tr>';
   }
   var posRowsBP=applyIndSecFilter(filterToPositions(allRows));
   // Enrich position rows with BP data (they may not have been enriched if filtered out)
-  for(var pk=0;pk<posRowsBP.length;pk++){var pr=posRowsBP[pk];if(pr.bp_stage===undefined){var bpd=pr.f.basing_plateau;if(!bpd||!bpd.group_a){pr.bp_stage="";pr.ga=false;pr.gb=false;pr.gc=false;pr.t1=false;pr.t2=false;pr.t3=false;pr.t4=false;pr.t5=false;pr.t6=false;pr.t7=false;pr.t8=false;}else{pr.bp_stage=bpd.stage;pr.ga=bpd.group_a.pass;pr.gb=bpd.group_b.pass;pr.gc=bpd.group_c.pass;pr.t1=bpd.group_a.tests.T1;pr.t2=bpd.group_a.tests.T2;pr.t3=bpd.group_b.tests.T3;pr.t4=bpd.group_b.tests.T4;pr.t5=bpd.group_b.tests.T5;pr.t6=bpd.group_c.tests.T6;pr.t7=bpd.group_c.tests.T7;pr.t8=bpd.group_c.tests.T8;}var m200b=pr.mas?pr.mas["200D"]:null,m150b=pr.mas?pr.mas["150D"]:null,m50b=pr.mas?pr.mas["50D"]:null;pr.t1_pct=m200b?(pr.price-m200b)/m200b:null;pr.t2_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t3_pct=m200b?(pr.price-m200b)/m200b:null;pr.t4_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t5_pct=(m150b&&m200b)?(m150b-m200b)/m200b:null;pr.t6_pct=m200b?(pr.price-m200b)/m200b:null;pr.t7_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t8_pct=(m150b&&m200b)?(m150b-m200b)/m200b:null;pr.mm_stage=pr.f.mm99?pr.f.mm99.stage:"";pr.pb_stage2=pr.f.probing_bet?pr.f.probing_bet.stage:"";pr.ma_map_price=pr.price;pr.ma_map_200=m200b;pr.ma_map_150=m150b;pr.ma_map_50=m50b;}}
+  for(var pk=0;pk<posRowsBP.length;pk++){var pr=posRowsBP[pk];if(pr.bp_stage===undefined){var bpd=pr.f.basing_plateau;if(!bpd||!bpd.group_a){pr.bp_stage="";pr.ga=false;pr.gc=false;pr.t1=false;pr.t2=false;pr.bp_loose_hist=[];pr.bp_loose_passed=0;pr.bp_loose_total=0;pr.bp_loose_streak=0;pr.bp_loose_pct=0;pr.bp_tight_streak=0;}else{pr.bp_stage=bpd.stage;pr.ga=bpd.group_a.pass;pr.gc=bpd.group_c.pass;pr.t1=bpd.group_a.tests.T1;pr.t2=bpd.group_a.tests.T2;pr.bp_loose_hist=bpd.group_a.history||[];pr.bp_loose_passed=bpd.group_a.days_passed||0;pr.bp_loose_total=bpd.group_a.days_total||0;pr.bp_loose_streak=bpd.group_a.streak||0;pr.bp_loose_pct=pr.bp_loose_total>0?(pr.bp_loose_passed/pr.bp_loose_total):0;pr.bp_tight_streak=bpd.group_c.streak||0;}var m200b=pr.mas?pr.mas["200D"]:null,m150b=pr.mas?pr.mas["150D"]:null,m50b=pr.mas?pr.mas["50D"]:null;pr.t1_pct=m200b?(pr.price-m200b)/m200b:null;pr.t2_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.mm_stage=pr.f.mm99?pr.f.mm99.stage:"";pr.pb_stage2=pr.f.probing_bet?pr.f.probing_bet.stage:"";pr.ma_map_price=pr.price;pr.ma_map_200=m200b;pr.ma_map_150=m150b;pr.ma_map_50=m50b;}}
   if(posRowsBP.length>0){
     h+='<h3 class="qualified-title" id="section-portfolio">Live Portfolio ('+posRowsBP.length+')</h3>';
     h+='<div class="data-table-wrap" style="margin-bottom:12px"><table class="data-table data-table-portfolio"><thead>'+bpHeaders()+'</thead><tbody>';
@@ -2142,11 +2178,17 @@ function renderBP(){
   for(var j=0;j<rows.length;j++)h+=bpRow(rows[j]);
   h+='</tbody></table></div>';
   h+=buildQualTilesV2(applyIndSecFilter(allRows),[
-    {key:"ga",label:"Loose Basing (\u00b115%)"},
-    {key:"gb",label:"Medium Basing (\u00b110%)"},
-    {key:"gc",label:"Tight Basing (\u00b15%)"}
+    {key:"ga",label:"Basing (\u00b115%) \u2014 Loose"},
+    {key:"gc",label:"Deep Base (\u00b15%) \u2014 Tight, long-horizon monitor"}
   ],totalCount,bpHeaders,bpRow);
   document.getElementById("tab-bp").innerHTML=h;
+}
+// Compact 63-bar duration sparkline (no inline label \u2014 Streak/%63d in own cols)
+function bpDaysPipsCompact(hist){
+  if(!hist||hist.length===0)return'<span style="color:#999">&mdash;</span>';
+  var h='<div class="bp-days-bar" style="display:inline-flex;gap:0">';
+  for(var j=0;j<hist.length;j++)h+='<div class="day-pip '+(hist[j]?'day-pip-on':'day-pip-off')+'"></div>';
+  return h+'</div>';
 }
 
 // ================================================================
