@@ -407,16 +407,28 @@ def build_prices_json(universe, raw_data, benchmark_rows):
                     ma200_month_detail.append(False)
 
         # Basing Plateau 3-month duration: check each BP test over last 63 trading days
-        # 95% threshold = at least 60 of 63 days must meet the condition
+        # 95% threshold = at least 60 of 63 days must meet the condition.
+        # Per-day pass/fail history + current continuous-streak retained (02-May-26)
+        # so the dashboard can render duration richness, not just binary flags.
         bp_duration = {"loose": False, "medium": False, "tight": False}
         bp_lookback = min(63, len(rows_with_sma))
         bp_window = rows_with_sma[-bp_lookback:]
         bp_threshold = 0.95
 
-        def _bp_pct_check(window, test_fn):
-            """Count what fraction of days in window pass the test."""
-            passes = sum(1 for r in window if test_fn(r))
-            return passes / len(window) if window else 0
+        def _bp_history(window, test_fn):
+            """Return per-day boolean list (oldest first) of test outcomes."""
+            return [bool(test_fn(r)) for r in window]
+
+        def _bp_streak(history):
+            """Walk history backwards from latest day; count consecutive True's
+            until first False. Returns 0 if today is failing."""
+            n = 0
+            for v in reversed(history):
+                if v:
+                    n += 1
+                else:
+                    break
+            return n
 
         def _wp(r, key_a, key_b, pct):
             """Within ±pct of each other using SMA values from a single row."""
@@ -427,27 +439,48 @@ def build_prices_json(universe, raw_data, benchmark_rows):
             return abs(va - vb) / vb <= pct
 
         # Loose: P within ±15% of 200D AND 150D, AND 50D within ±15% of 200D AND 150D
-        loose_pct = _bp_pct_check(bp_window, lambda r:
+        loose_test = lambda r: (
             _wp(r, "close", "sma_200", 0.15) and _wp(r, "close", "sma_150", 0.15) and
             _wp(r, "sma_50", "sma_200", 0.15) and _wp(r, "sma_50", "sma_150", 0.15))
+        loose_history = _bp_history(bp_window, loose_test)
+        loose_passes = sum(1 for v in loose_history if v)
+        loose_pct = (loose_passes / len(loose_history)) if loose_history else 0
         bp_duration["loose"] = loose_pct >= bp_threshold
         bp_duration["loose_pct"] = round(loose_pct, 3)
+        bp_duration["loose_days_passed"] = loose_passes
+        bp_duration["loose_days_total"] = len(loose_history)
+        bp_duration["loose_history"] = loose_history
+        bp_duration["loose_streak"] = _bp_streak(loose_history)
 
         # Medium: + 150D within ±10% of 200D
-        medium_pct = _bp_pct_check(bp_window, lambda r:
+        medium_test = lambda r: (
             _wp(r, "close", "sma_200", 0.10) and _wp(r, "close", "sma_150", 0.10) and
             _wp(r, "sma_50", "sma_200", 0.10) and _wp(r, "sma_50", "sma_150", 0.10) and
             _wp(r, "sma_150", "sma_200", 0.10))
+        medium_history = _bp_history(bp_window, medium_test)
+        medium_passes = sum(1 for v in medium_history if v)
+        medium_pct = (medium_passes / len(medium_history)) if medium_history else 0
         bp_duration["medium"] = medium_pct >= bp_threshold
         bp_duration["medium_pct"] = round(medium_pct, 3)
+        bp_duration["medium_days_passed"] = medium_passes
+        bp_duration["medium_days_total"] = len(medium_history)
+        bp_duration["medium_history"] = medium_history
+        bp_duration["medium_streak"] = _bp_streak(medium_history)
 
         # Tight: all within ±5%
-        tight_pct = _bp_pct_check(bp_window, lambda r:
+        tight_test = lambda r: (
             _wp(r, "close", "sma_200", 0.05) and _wp(r, "close", "sma_150", 0.05) and
             _wp(r, "sma_50", "sma_200", 0.05) and _wp(r, "sma_50", "sma_150", 0.05) and
             _wp(r, "sma_150", "sma_200", 0.05))
+        tight_history = _bp_history(bp_window, tight_test)
+        tight_passes = sum(1 for v in tight_history if v)
+        tight_pct = (tight_passes / len(tight_history)) if tight_history else 0
         bp_duration["tight"] = tight_pct >= bp_threshold
         bp_duration["tight_pct"] = round(tight_pct, 3)
+        bp_duration["tight_days_passed"] = tight_passes
+        bp_duration["tight_days_total"] = len(tight_history)
+        bp_duration["tight_history"] = tight_history
+        bp_duration["tight_streak"] = _bp_streak(tight_history)
 
         # ── MM99 Monthly History (T1-T8, 28-Apr-26) ────────────────
         # At each of the last 12 calendar month-ends, reconstruct all 8
@@ -803,7 +836,11 @@ def compute_all_filters(prices):
         t2 = within_pct(ma(50), ma(200), 0.15) and within_pct(ma(50), ma(150), 0.15)
         loose_dur = bp_dur.get("loose", False)
         bp["group_a"] = {"pass": t1 and t2 and loose_dur, "tests": {"T1": t1, "T2": t2},
-                         "duration_met": loose_dur, "duration_pct": bp_dur.get("loose_pct", 0)}
+                         "duration_met": loose_dur, "duration_pct": bp_dur.get("loose_pct", 0),
+                         "days_passed": bp_dur.get("loose_days_passed", 0),
+                         "days_total": bp_dur.get("loose_days_total", 0),
+                         "history": bp_dur.get("loose_history", []),
+                         "streak": bp_dur.get("loose_streak", 0)}
 
         # Group B — Medium (±10%)
         t3 = within_pct(p, ma(200), 0.10) and within_pct(p, ma(150), 0.10)
@@ -811,7 +848,11 @@ def compute_all_filters(prices):
         t5 = within_pct(ma(150), ma(200), 0.10)
         medium_dur = bp_dur.get("medium", False)
         bp["group_b"] = {"pass": t3 and t4 and t5 and medium_dur, "tests": {"T3": t3, "T4": t4, "T5": t5},
-                         "duration_met": medium_dur, "duration_pct": bp_dur.get("medium_pct", 0)}
+                         "duration_met": medium_dur, "duration_pct": bp_dur.get("medium_pct", 0),
+                         "days_passed": bp_dur.get("medium_days_passed", 0),
+                         "days_total": bp_dur.get("medium_days_total", 0),
+                         "history": bp_dur.get("medium_history", []),
+                         "streak": bp_dur.get("medium_streak", 0)}
 
         # Group C — Tight (±5%)
         t6 = within_pct(p, ma(200), 0.05) and within_pct(p, ma(150), 0.05)
@@ -819,7 +860,11 @@ def compute_all_filters(prices):
         t8 = within_pct(ma(150), ma(200), 0.05)
         tight_dur = bp_dur.get("tight", False)
         bp["group_c"] = {"pass": t6 and t7 and t8 and tight_dur, "tests": {"T6": t6, "T7": t7, "T8": t8},
-                         "duration_met": tight_dur, "duration_pct": bp_dur.get("tight_pct", 0)}
+                         "duration_met": tight_dur, "duration_pct": bp_dur.get("tight_pct", 0),
+                         "days_passed": bp_dur.get("tight_days_passed", 0),
+                         "days_total": bp_dur.get("tight_days_total", 0),
+                         "history": bp_dur.get("tight_history", []),
+                         "streak": bp_dur.get("tight_streak", 0)}
 
         # Qualification stage
         if bp["group_c"]["pass"]:

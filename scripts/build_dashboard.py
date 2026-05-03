@@ -357,6 +357,13 @@ table.data-table td.col-identity{white-space:nowrap}
 .score-bar .pip{width:6px;height:12px;border-radius:2px}
 .pip-on{background:var(--green)}.pip-off{background:#e0ddd3}
 .pip-amber{background:var(--amber)}
+/* BP daily duration strip — 63 bars (3 trading months) per group, narrower pip so 3 groups fit */
+.bp-days-bar{display:inline-flex;gap:0;vertical-align:middle;align-items:center;line-height:1}
+.bp-days-bar .day-pip{width:2px;height:11px;border-radius:0}
+.day-pip-on{background:var(--green)}.day-pip-off{background:#e8e5d8}
+.bp-days-frac{margin-left:5px;font-size:10px;color:#555;font-variant-numeric:tabular-nums}
+.bp-days-streak{margin-left:4px;font-size:10px;font-weight:600;color:#1b5e20;font-variant-numeric:tabular-nums}
+.bp-days-streak-zero{color:#999;font-weight:400}
 .signal-bar{display:inline-flex;gap:1px;vertical-align:middle}
 .signal-bar .seg{width:12px;height:16px;border-radius:2px}
 .seg-pass{background:var(--green)}.seg-fail{background:var(--red-dim)}.seg-amber{background:var(--amber-dim)}
@@ -1202,6 +1209,19 @@ function scorePips(s,m){var h='<div class="score-bar">';for(var j=0;j<m;j++)h+='
 // Score pips mapped to individual test results (each pip = one test)
 function testPips(tests){var h='<div class="score-bar">';for(var j=0;j<tests.length;j++)h+='<div class="pip '+(tests[j]?'pip-on':'pip-off')+'"></div>';return h+'</div>'}
 function monthsPips(hist,count){var h='<div class="score-bar">';for(var j=0;j<hist.length;j++)h+='<div class="pip '+(hist[j]?'pip-on':'pip-off')+'"></div>';return h+' <span style="margin-left:4px;font-weight:600">'+count+'/12</span></div>'}
+// BP daily duration strip: 63 daily pass/fail pips (oldest left, latest right)
+// + streak (consecutive days currently meeting the test, walking back from today)
+// + X/63 fraction. hist: array of bool (oldest first); passed: int; total: int; streak: int.
+function bpDaysPips(hist,passed,total,streak){
+  if(!hist||hist.length===0)return'<span style="color:#999">&mdash;</span>';
+  var h='<div class="bp-days-bar"><div style="display:inline-flex;gap:0">';
+  for(var j=0;j<hist.length;j++)h+='<div class="day-pip '+(hist[j]?'day-pip-on':'day-pip-off')+'"></div>';
+  h+='</div>';
+  h+='<span class="bp-days-frac">'+passed+'/'+total+'</span>';
+  var sc=streak>0?"bp-days-streak":"bp-days-streak bp-days-streak-zero";
+  h+='<span class="'+sc+'" title="Consecutive days currently meeting the test">'+streak+'d</span>';
+  h+='</div>';return h;
+}
 function signalBar(sigs){var h='<div class="signal-bar">';for(var j=0;j<sigs.length;j++){var c=sigs[j]==="pass"?"seg-pass":sigs[j]==="amber"?"seg-amber":"seg-fail";h+='<div class="seg '+c+'"></div>'}return h+'</div>'}
 
 function addCommas(s){var p=s.split(".");var i=p[0];var d=p.length>1?"."+p[1]:"";var r="";var c=0;for(var j=i.length-1;j>=0;j--){if(c>0&&c%3===0)r=","+r;r=i.charAt(j)+r;c++}return r+d}
@@ -2061,11 +2081,16 @@ function renderBP(){
   var rows=[];
   for(var j=0;j<allRows.length;j++){
     var r=allRows[j],bp=r.f.basing_plateau;
-    if(!bp||!bp.group_a){r.bp_stage="";r.ga=false;r.gb=false;r.gc=false;r.t1=false;r.t2=false;r.t3=false;r.t4=false;r.t5=false;r.t6=false;r.t7=false;r.t8=false;r.t1_pct=null;r.t2_pct=null;r.t3_pct=null;r.t4_pct=null;r.t5_pct=null;r.t6_pct=null;r.t7_pct=null;r.t8_pct=null;r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";r.ma_map_price=r.price;r.ma_map_200=null;r.ma_map_150=null;r.ma_map_50=null;rows.push(r);continue;}
+    if(!bp||!bp.group_a){r.bp_stage="";r.ga=false;r.gb=false;r.gc=false;r.t1=false;r.t2=false;r.t3=false;r.t4=false;r.t5=false;r.t6=false;r.t7=false;r.t8=false;r.t1_pct=null;r.t2_pct=null;r.t3_pct=null;r.t4_pct=null;r.t5_pct=null;r.t6_pct=null;r.t7_pct=null;r.t8_pct=null;r.bp_loose_hist=[];r.bp_loose_passed=0;r.bp_loose_total=0;r.bp_loose_streak=0;r.bp_med_hist=[];r.bp_med_passed=0;r.bp_med_total=0;r.bp_med_streak=0;r.bp_tight_hist=[];r.bp_tight_passed=0;r.bp_tight_total=0;r.bp_tight_streak=0;r.mm_stage=r.f.mm99?r.f.mm99.stage:"";r.pb_stage2=r.f.probing_bet?r.f.probing_bet.stage:"";r.ma_map_price=r.price;r.ma_map_200=null;r.ma_map_150=null;r.ma_map_50=null;rows.push(r);continue;}
     r.bp_stage=bp.stage;r.ga=bp.group_a.pass;r.gb=bp.group_b.pass;r.gc=bp.group_c.pass;
     r.t1=bp.group_a.tests.T1;r.t2=bp.group_a.tests.T2;
     r.t3=bp.group_b.tests.T3;r.t4=bp.group_b.tests.T4;r.t5=bp.group_b.tests.T5;
     r.t6=bp.group_c.tests.T6;r.t7=bp.group_c.tests.T7;r.t8=bp.group_c.tests.T8;
+    // BP duration history (02-May-26): per-day pass/fail over last 63 trading days
+    // + current continuous streak. Used by bpDaysPips() in the new Duration columns.
+    r.bp_loose_hist=bp.group_a.history||[];r.bp_loose_passed=bp.group_a.days_passed||0;r.bp_loose_total=bp.group_a.days_total||0;r.bp_loose_streak=bp.group_a.streak||0;
+    r.bp_med_hist=bp.group_b.history||[];r.bp_med_passed=bp.group_b.days_passed||0;r.bp_med_total=bp.group_b.days_total||0;r.bp_med_streak=bp.group_b.streak||0;
+    r.bp_tight_hist=bp.group_c.history||[];r.bp_tight_passed=bp.group_c.days_passed||0;r.bp_tight_total=bp.group_c.days_total||0;r.bp_tight_streak=bp.group_c.streak||0;
     var m200=r.mas?r.mas["200D"]:null,m150=r.mas?r.mas["150D"]:null,m50=r.mas?r.mas["50D"]:null;
 
     // FIX-12: Compute pct values for BP testCell
@@ -2102,34 +2127,41 @@ function renderBP(){
 
   // FIX-2: Qualified Stocks title
   function bpHeaders(){
-    // BP: 10(common) + 1(MA Range) + 2(Loose) + 3(Medium) + 3(Tight) + 2(refs) + 8(ratings) = 29
+    // BP: 10(common) + 1(MA Range) + 3(Loose: P~200, 50~200, Duration) + 4(Medium: + 150~200) + 4(Tight: + 150~200) + 2(refs) + 8(ratings) = 32
+    // Duration column added per group 02-May-26 (63-day pass/fail strip + streak + X/63 fraction).
     var hdr='<tr class="group-header-row"><th colspan="2"></th><th colspan="7" style="background:rgba(100,100,100,0.06)">Inputs</th><th></th><th></th>';
-    hdr+='<th colspan="2" style="background:rgba(50,100,200,0.08)">Loose Plateau (\u00b115%)</th>';
-    hdr+='<th colspan="3" style="background:rgba(200,150,0,0.08)">Medium Plateau (\u00b110%)</th>';
-    hdr+='<th colspan="3" style="background:rgba(50,150,50,0.08)">Tight Plateau (\u00b15%)</th>';
+    hdr+='<th colspan="3" style="background:rgba(50,100,200,0.08)">Loose Plateau (\u00b115%)</th>';
+    hdr+='<th colspan="4" style="background:rgba(200,150,0,0.08)">Medium Plateau (\u00b110%)</th>';
+    hdr+='<th colspan="4" style="background:rgba(50,150,50,0.08)">Tight Plateau (\u00b15%)</th>';
     hdr+='<th colspan="2"></th>';
     hdr+=ratingsColHeaders().length>0?'<th colspan="8" class="col-ratings">Ratings</th>':"";
     hdr+='</tr><tr class="col-header-row">';
     // FIX: MA Range 3x wider, test columns narrower
     hdr+=commonCols()+th("MA Range","ma_map_price","col-filter","Visual: relative positions of Price, 200D, 150D, 50D MAs","width:240px")
-      +th("P~200","t1_pct","col-filter grp-loose-first","Price within 15% of 200D MA","width:50px")+th("50~200","t2_pct","col-filter grp-loose-last","50D within 15% of 200D MA","width:50px")
-      +th("P~200","t3_pct","col-filter grp-med-first","Price within 10% of 200D MA","width:50px")+th("50~200","t4_pct","col-filter","50D within 10% of 200D MA","width:50px")+th("150~200","t5_pct","col-filter grp-med-last","150D within 10% of 200D MA","width:55px")
-      +th("P~200","t6_pct","col-filter grp-tight-first","Price within 5% of 200D MA","width:50px")+th("50~200","t7_pct","col-filter","50D within 5% of 200D MA","width:50px")+th("150~200","t8_pct","col-filter grp-tight-last","150D within 5% of 200D MA","width:55px")
+      +th("P~200","t1_pct","col-filter grp-loose-first","Price within 15% of 200D MA","width:50px")+th("50~200","t2_pct","col-filter","50D within 15% of 200D MA","width:50px")
+      +th("Duration","bp_loose_streak","col-filter grp-loose-last","Days in last 63 trading days the Loose test held + current consecutive-day streak. Sort: streak desc.","width:200px")
+      +th("P~200","t3_pct","col-filter grp-med-first","Price within 10% of 200D MA","width:50px")+th("50~200","t4_pct","col-filter","50D within 10% of 200D MA","width:50px")+th("150~200","t5_pct","col-filter","150D within 10% of 200D MA","width:55px")
+      +th("Duration","bp_med_streak","col-filter grp-med-last","Days in last 63 trading days the Medium test held + current consecutive-day streak. Sort: streak desc.","width:200px")
+      +th("P~200","t6_pct","col-filter grp-tight-first","Price within 5% of 200D MA","width:50px")+th("50~200","t7_pct","col-filter","50D within 5% of 200D MA","width:50px")+th("150~200","t8_pct","col-filter","150D within 5% of 200D MA","width:55px")
+      +th("Duration","bp_tight_streak","col-filter grp-tight-last","Days in last 63 trading days the Tight test held + current consecutive-day streak. Sort: streak desc.","width:200px")
       +th("MM 99","mm_stage","col-txt col-ref","MM99 filter stage")+th("Probing Bet","pb_stage2","col-txt col-ref","Probing Bet filter stage")+ratingsColHeaders();
     hdr+='</tr>';return hdr;
   }
   function bpRow(r){
     return'<tr onclick="openChart(\''+r.ticker+'\')" style="cursor:pointer">'+commonTds(r)
       +'<td class="col-filter">'+buildMAMap(r.ma_map_price,r.ma_map_200,r.ma_map_150,r.ma_map_50)+'</td>'
-      +testCell(r.t1,r.t1_pct,"col-filter grp-loose-first")+testCell(r.t2,r.t2_pct,"col-filter grp-loose-last")
-      +testCell(r.t3,r.t3_pct,"col-filter grp-med-first")+testCell(r.t4,r.t4_pct,"col-filter")+testCell(r.t5,r.t5_pct,"col-filter grp-med-last")
-      +testCell(r.t6,r.t6_pct,"col-filter grp-tight-first")+testCell(r.t7,r.t7_pct,"col-filter")+testCell(r.t8,r.t8_pct,"col-filter grp-tight-last")
+      +testCell(r.t1,r.t1_pct,"col-filter grp-loose-first")+testCell(r.t2,r.t2_pct,"col-filter")
+      +'<td class="col-filter grp-loose-last">'+bpDaysPips(r.bp_loose_hist,r.bp_loose_passed,r.bp_loose_total,r.bp_loose_streak)+'</td>'
+      +testCell(r.t3,r.t3_pct,"col-filter grp-med-first")+testCell(r.t4,r.t4_pct,"col-filter")+testCell(r.t5,r.t5_pct,"col-filter")
+      +'<td class="col-filter grp-med-last">'+bpDaysPips(r.bp_med_hist,r.bp_med_passed,r.bp_med_total,r.bp_med_streak)+'</td>'
+      +testCell(r.t6,r.t6_pct,"col-filter grp-tight-first")+testCell(r.t7,r.t7_pct,"col-filter")+testCell(r.t8,r.t8_pct,"col-filter")
+      +'<td class="col-filter grp-tight-last">'+bpDaysPips(r.bp_tight_hist,r.bp_tight_passed,r.bp_tight_total,r.bp_tight_streak)+'</td>'
       +'<td class="col-txt col-ref">'+badge(r.mm_stage)+'</td><td class="col-txt col-ref">'+badge(r.pb_stage2)+'</td>'
       +ratingsColTds(r)+'</tr>';
   }
   var posRowsBP=applyIndSecFilter(filterToPositions(allRows));
   // Enrich position rows with BP data (they may not have been enriched if filtered out)
-  for(var pk=0;pk<posRowsBP.length;pk++){var pr=posRowsBP[pk];if(pr.bp_stage===undefined){var bpd=pr.f.basing_plateau;if(!bpd||!bpd.group_a){pr.bp_stage="";pr.ga=false;pr.gb=false;pr.gc=false;pr.t1=false;pr.t2=false;pr.t3=false;pr.t4=false;pr.t5=false;pr.t6=false;pr.t7=false;pr.t8=false;}else{pr.bp_stage=bpd.stage;pr.ga=bpd.group_a.pass;pr.gb=bpd.group_b.pass;pr.gc=bpd.group_c.pass;pr.t1=bpd.group_a.tests.T1;pr.t2=bpd.group_a.tests.T2;pr.t3=bpd.group_b.tests.T3;pr.t4=bpd.group_b.tests.T4;pr.t5=bpd.group_b.tests.T5;pr.t6=bpd.group_c.tests.T6;pr.t7=bpd.group_c.tests.T7;pr.t8=bpd.group_c.tests.T8;}var m200b=pr.mas?pr.mas["200D"]:null,m150b=pr.mas?pr.mas["150D"]:null,m50b=pr.mas?pr.mas["50D"]:null;pr.t1_pct=m200b?(pr.price-m200b)/m200b:null;pr.t2_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t3_pct=m200b?(pr.price-m200b)/m200b:null;pr.t4_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t5_pct=(m150b&&m200b)?(m150b-m200b)/m200b:null;pr.t6_pct=m200b?(pr.price-m200b)/m200b:null;pr.t7_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t8_pct=(m150b&&m200b)?(m150b-m200b)/m200b:null;pr.mm_stage=pr.f.mm99?pr.f.mm99.stage:"";pr.pb_stage2=pr.f.probing_bet?pr.f.probing_bet.stage:"";pr.ma_map_price=pr.price;pr.ma_map_200=m200b;pr.ma_map_150=m150b;pr.ma_map_50=m50b;}}
+  for(var pk=0;pk<posRowsBP.length;pk++){var pr=posRowsBP[pk];if(pr.bp_stage===undefined){var bpd=pr.f.basing_plateau;if(!bpd||!bpd.group_a){pr.bp_stage="";pr.ga=false;pr.gb=false;pr.gc=false;pr.t1=false;pr.t2=false;pr.t3=false;pr.t4=false;pr.t5=false;pr.t6=false;pr.t7=false;pr.t8=false;pr.bp_loose_hist=[];pr.bp_loose_passed=0;pr.bp_loose_total=0;pr.bp_loose_streak=0;pr.bp_med_hist=[];pr.bp_med_passed=0;pr.bp_med_total=0;pr.bp_med_streak=0;pr.bp_tight_hist=[];pr.bp_tight_passed=0;pr.bp_tight_total=0;pr.bp_tight_streak=0;}else{pr.bp_stage=bpd.stage;pr.ga=bpd.group_a.pass;pr.gb=bpd.group_b.pass;pr.gc=bpd.group_c.pass;pr.t1=bpd.group_a.tests.T1;pr.t2=bpd.group_a.tests.T2;pr.t3=bpd.group_b.tests.T3;pr.t4=bpd.group_b.tests.T4;pr.t5=bpd.group_b.tests.T5;pr.t6=bpd.group_c.tests.T6;pr.t7=bpd.group_c.tests.T7;pr.t8=bpd.group_c.tests.T8;pr.bp_loose_hist=bpd.group_a.history||[];pr.bp_loose_passed=bpd.group_a.days_passed||0;pr.bp_loose_total=bpd.group_a.days_total||0;pr.bp_loose_streak=bpd.group_a.streak||0;pr.bp_med_hist=bpd.group_b.history||[];pr.bp_med_passed=bpd.group_b.days_passed||0;pr.bp_med_total=bpd.group_b.days_total||0;pr.bp_med_streak=bpd.group_b.streak||0;pr.bp_tight_hist=bpd.group_c.history||[];pr.bp_tight_passed=bpd.group_c.days_passed||0;pr.bp_tight_total=bpd.group_c.days_total||0;pr.bp_tight_streak=bpd.group_c.streak||0;}var m200b=pr.mas?pr.mas["200D"]:null,m150b=pr.mas?pr.mas["150D"]:null,m50b=pr.mas?pr.mas["50D"]:null;pr.t1_pct=m200b?(pr.price-m200b)/m200b:null;pr.t2_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t3_pct=m200b?(pr.price-m200b)/m200b:null;pr.t4_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t5_pct=(m150b&&m200b)?(m150b-m200b)/m200b:null;pr.t6_pct=m200b?(pr.price-m200b)/m200b:null;pr.t7_pct=(m50b&&m200b)?(m50b-m200b)/m200b:null;pr.t8_pct=(m150b&&m200b)?(m150b-m200b)/m200b:null;pr.mm_stage=pr.f.mm99?pr.f.mm99.stage:"";pr.pb_stage2=pr.f.probing_bet?pr.f.probing_bet.stage:"";pr.ma_map_price=pr.price;pr.ma_map_200=m200b;pr.ma_map_150=m150b;pr.ma_map_50=m50b;}}
   if(posRowsBP.length>0){
     h+='<h3 class="qualified-title" id="section-portfolio">Live Portfolio ('+posRowsBP.length+')</h3>';
     h+='<div class="data-table-wrap" style="margin-bottom:12px"><table class="data-table data-table-portfolio"><thead>'+bpHeaders()+'</thead><tbody>';
